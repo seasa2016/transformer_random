@@ -1,0 +1,11 @@
+*.csv
+*.label
+*.pyc
+*.lang1
+*.lang2
+*.MpacQ
+*.pt
+*.txt
+*.source
+*.target
+subword.*
