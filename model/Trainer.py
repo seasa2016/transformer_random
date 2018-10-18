@@ -121,7 +121,7 @@ class Trainer(object):
         """
         logger.info('start training...')
 
-        step = self.optim._step + 1
+        step = self.optim._step
         true_batchs = []
         accum = 0
         normalization = 0
@@ -147,15 +147,10 @@ class Trainer(object):
                     true_batchs.append(batch)
 
                     if(self.norm_method == 'tokens'):
-                        try:
-                            num_tokens = batch['target'].ne(Constant.PAD).sum()
-                        except:
-                            print(batch['target'])
-                            num_tokens = batch['target'].ne(Constant.PAD).sum()
-                        normalization += num_tokens.item()
+                        normalization += ( torch.sum(batch['target_len']) - batch['target_len'].shape[0])
                     else:
                         normalization += batch['target'].shape[0]
-                    
+
                     accum += 1
                     if(accum == self.grad_accum_count):
                         reduce_counter += 1
@@ -218,7 +213,7 @@ class Trainer(object):
         self.model.eval()
 
         stats = statistics.Statistics()
-
+        logger.info("start validation")
         for i,batch in enumerate(valid_loader):
             if(torch.cuda.is_available()):
                 batch = to_cuda(batch)
@@ -228,7 +223,7 @@ class Trainer(object):
                 )
             
             batch_stat = self.valid_loss.monolithic_compute_loss(
-                batch['target'],output,attn)
+                batch['target'],output,attn,batch['origin'])
             
             stats.update(batch_stat)
             
@@ -270,10 +265,10 @@ class Trainer(object):
                     batch['source'],target,batch['source_len'],dec_state
                 )
                 
-
+                print("qqq",output.shape )
                 batch_stat = self.train_loss.sharded_compute_loss(
                     batch['target'], output, attn, j,
-                    trunc_size+1, self.shard_size , normalization)
+                    trunc_size+1, self.shard_size , normalization,batch)
 
                 total_stats.update(batch_stat)
                 report_stats.update(batch_stat)

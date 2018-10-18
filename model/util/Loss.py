@@ -74,7 +74,7 @@ class LossComputeBase(nn.Module):
         """
         return NotImplementedError
 
-    def monolithic_compute_loss(self,tgt,output,attns):
+    def monolithic_compute_loss(self,tgt,output,attns,origin):
         """
         Compute the forward loss for the batch.
 
@@ -91,11 +91,10 @@ class LossComputeBase(nn.Module):
         range_ = (0,tgt.shape[0])
         shard_state = self._make_shard_state(tgt,output,range_,attns)
         _,batch_stats = self._compute_loss(**shard_state)
-
         return batch_stats
 
     def sharded_compute_loss(self,tgt,output,attns,
-                            cur_trunc,trunc_size,shard_size,normalization):
+                            cur_trunc,trunc_size,shard_size,normalization,batch):
         """
         Compute the forward loss and backpropagate.  Computation is done
         with shards and optionally truncation for memory efficiency.
@@ -129,8 +128,8 @@ class LossComputeBase(nn.Module):
         range_ = (cur_trunc,cur_trunc + trunc_size)
         shard_state = self._make_shard_state(tgt,output,range_,attns)
         
-        for shard in shards(shard_state,shard_size):
-            loss, stats = self._compute_loss(**shard)
+        for i,shard in enumerate(shards(shard_state,shard_size)):
+            loss, stats = self._compute_loss(**shard,shard_size=shard_size,origin=origin,now=i)
             
             #compute the gradient
             loss.div(float(normalization)).backward()
@@ -184,23 +183,39 @@ class LabelSmoothingLoss(nn.Module):
         #however here we meet that the padding problem. therefore 2
         smoothing_value = label_smoothing / (tgt_dict_size - 2)
         one_hot = torch.full((tgt_dict_size,),smoothing_value)
+        one_hot = torch.full((tgt_dict_size,),0)
         
         one_hot[self.padding_idx] = 0
         self.register_buffer('one_hot',one_hot.unsqueeze(0))
 
         self.confidence = 1.0 - label_smoothing
 
-    def forward(self,output,target):
+    def forward(self,output,target,shard_size,origin,part,now):
         """
         output (FloatTensor): batch_size x n_classes
         target (LongTensor): batch_size
         """
         model_prob = self.one_hot.repeat(target.shape[0],1)
-        model_prob.scatter_(1,target.unsqueeze(1),self.confidence)
+        print(origin.shape , model_prob.shape[0],part,now)
+
+        for i in range(model_prob.shape[0]):
+            now = now*shard_size+i//part
+            #for the last put eos
+            if( now == origin.shape[1] ):
+            
+            #else put available ans
+            else:  
+                model_prob[i][ origin[i%part][now:] ] = 1
+                model_prob[i][0] = 0
+                
+                model_prob[i] /= ( origin.shape[1]-now )
+        
+        #model_prob.scatter_(1,target.unsqueeze(1),self.confidence)
         model_prob.masked_fill_((target == self.padding_idx).unsqueeze(1),0)
 
         output = F.log_softmax(output,dim=-1)
-        return F.kl_div(output,model_prob,reduction='sum')
+        loss = -torch.sum(output*model_prob)
+        return loss
 
 class NMTLossCompute(LossComputeBase):
     """
@@ -225,13 +240,18 @@ class NMTLossCompute(LossComputeBase):
             "target"  : target[ range_[0]+1 : range_[1] ]
         }
     
-    def _compute_loss(self,target,output):
+    def _compute_loss(self,target,output,shard_size=32,origin=None,now=0):
         #here i should deal with the dimension problem
+
+        part = output.shape[1]
 
         bottled_output = self._bottle(output)
         truth = target.view(-1)
-
-        loss = self.criterion(bottled_output,truth)
+        
+        if(origin is None):
+            loss = self.criterion(bottled_output,truth)
+        else:
+            loss = self.criterion(bottled_output,truth,shard_size,origin,part,now)
         stats = self._stats(loss.clone(),bottled_output,truth)
 
         return loss,stats
