@@ -230,7 +230,7 @@ def train_opts(parser):
     group = parser.add_argument_group('Logging')
     group.add_argument('-report_every', type=int, default=100,
                        help="Print stats at this interval.")
-    group.add_argument('-log_file', type=str, default="/logger",
+    group.add_argument('-log_file', type=str, default="./logger",
                        help="Output logs to a file under this path.")
     # Use TensorboardX for visualization during training
     group.add_argument('-tensorboard', action="store_false",
@@ -327,6 +327,8 @@ def translation_opts(parser):
                        help="Output logs to a file under this path.")
     group.add_argument('-attn_debug', action="store_true",
                        help='Print best attn for each word')
+    group.add_argument('-show', action="store_true",
+                       help='show the data on the screen')
     group.add_argument('-dump_beam', type=str, default="",
                        help='File to dump beam information to.')
     group.add_argument('-n_best', type=int, default=1,
