@@ -25,6 +25,8 @@ class itemDataset(Dataset):
             
             playlist['source_len'] = [ len(playlist['source']) ]
             playlist['target_len'] = [ len(playlist['target']) ]
+            playlist["source"] = np.array(playlist["source"])
+            playlist["target"] = np.array(playlist["target"][1:-1])
 
             self.data.append(playlist)
 
@@ -38,89 +40,63 @@ class itemDataset(Dataset):
         if self.transform:
             sample = self.transform(sample)
         return sample
-
-class tolist(object):
-    def __init__(self,output_size):
-        assert(isinstance(output_size,dict))
-        
-        self.output_size = output_size
-                
-    def __call__(self,sample):
-        output = dict()
-        output['source'] = sample['source']
-        output['source_len'] = sample['source_len']
-        
-        output['target'] = sample['target']
-        output['target_len'] = sample['target_len']
-
-
-        return output
-
 class ToTensor(object):
     def __call__(self,sample):
         #prlong(sample)
+        np.random.shuffle(sample['target'])
+        qq = sample['target']
+        sample['target'] = np.concatenate([[2],sample['target'],[1]])
         return{
             'source':torch.tensor(sample['source'],dtype=torch.long),
             'target':torch.tensor(sample['target'],dtype=torch.long),
-            'source_len':sample['source_len'],
-            'target_len':sample['target_len']
+            'source_len':torch.tensor(sample['source_len'],dtype=torch.long),
+            'target_len':torch.tensor(sample['target_len'],dtype=torch.long),
+            'origin':torch.tensor(qq,dtype=torch.long)
             }
 
 def collate_fn(data):
     
     output = dict()
     #deal with source and target
-    l = 0
-    for i in range(len(data)):
-        l = max(l,data[i]['source'].shape[0])
-    for i in range(len(data)):
-        if(l-data[i]['source'].shape[0]):
-            data[i]['source'] =  torch.cat([data[i]['source'],torch.zeros(l-data[i]['source'].shape[0],dtype=torch.long)],dim=-1)
+    for t in ['source','target','origin']:
+        l = 0
+        for i in range(len(data)):
+            l = max(l,data[i][t].shape[0])
+        if(l == 0):
+            continue
+        for i in range(len(data)):
+            if(l-data[i][t].shape[0]):
+                data[i][t] =  torch.cat([data[i][t],torch.zeros(l-data[i][t].shape[0],dtype=torch.long)],dim=-1)
     
-    l = 0
-    for i in range(len(data)):
-        l = max(l,data[i]['target'].shape[0])
-    if(l == 0):
-        l = None
-    for i in range(len(data)):
-        if(l == None):
-            break
-        elif(l-data[i]['target'].shape[0]):
-            data[i]['target'] =  torch.cat([data[i]['target'],torch.zeros(l-data[i]['target'].shape[0],dtype=torch.long)],dim=-1)
     
-    for name in [ 'source','target']:
-        if(name == 'target' and l is None):
+    for name in [ 'source','target','origin']:
+        if(name not in data[0]):
             continue
 
         arr = [ data[i][name] for i in range(len(data))]
         output[name] = torch.stack(arr,dim=0)
     
     output['source'] = output['source'].transpose(0,1)
-    output['source_len'] = np.concatenate([ data[i]['source_len'] for i in range(len(data))],axis=0)
-
+    output['source_len'] = torch.cat([ data[i]['source_len'] for i in range(len(data))],dim=0)
     if('target' in output):
         output['target'] = output['target'].transpose(0,1)
-        output['target_len'] = np.concatenate([ data[i]['target_len'] for i in range(len(data))],axis=0)
-
+        output['target_len'] = torch.cat([ data[i]['target_len'] for i in range(len(data))],dim=0)
     
     return output
 
 if(__name__ == '__main__'):
-    output_size = dict()
-    for name in ['source','language','year','acoustic','genre','context','o']:
-        with open('token_{0}.label'.format(name)) as f:
-            output_size[name] = len(f.readlines())
     print('QQQ')
     dataset = itemDataset(file_name='playlist_20180826_train.csv',
-                                transform=transforms.Compose([tolist(output_size),ToTensor()]))
+                                transform=transforms.Compose([ToTensor()]))
     
     
-    dataloader = DataLoader(dataset, batch_size=32,
+    dataloader = DataLoader(dataset, batch_size=2,
                         shuffle=False, num_workers=10,collate_fn=collate_fn)
 
     for i,data in enumerate(dataloader):
-        print(i)
         if(i==0):
             print(data) 
+        break
+        # print(i)
 
             

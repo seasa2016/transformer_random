@@ -86,10 +86,10 @@ class Decoder(nn.Module):
                 step=None,cache=None):
         
         src = state.src
-        src_words = src[:,:].transpose(0,1)
-        tar_words = tar[:,:].transpose(0,1)
-        src_batch,src_len = src_words.shape
-        tar_batch,tar_len = tar_words.shape
+        src_words = src.transpose(0,1)
+        tar_words = tar.transpose(0,1)
+        src_batch,src_len = src_words.shape[:2]
+        tar_batch,tar_len = tar_words.shape[:2]
 
         outputs = []
         attns = {"std":[]}
@@ -167,11 +167,11 @@ class TransformerDecoderState(object):
         self.previous_layer_inputs = None
         self.cache = None
     
-    #property
+    @property
     def _all(self):
         #with attribute to update self.beam_update()
         if(self.previous_input is not None and self.previous_layer_inputs is not None):
-            return (self.previous_input,self.previous_layer_inputs.self.src)
+            return (self.previous_input,self.previous_layer_inputs,self.src)
         else:
             return (self.src)
 
@@ -192,15 +192,20 @@ class TransformerDecoderState(object):
 
     def beam_update(self,idx,positions,beam_size):
         for e in self._all:
-            sizes = e.shape
+            sizes = e.size()
             br = sizes[1]
-            if(len(sizes) == 3):
+            if(len(sizes) == 2):
+                sent_states = e.view(sizes[0],beam_size,br // beam_size,
+									)[:,:,idx]
+
+            elif(len(sizes) == 3):
                 sent_states = e.view(sizes[0],beam_size,br // beam_size,
                                         sizes[2])[:,:,idx]
-
-            else:
+            elif(len(sizes) == 4):
                 sent_states = e.view(sizes[0],beam_size,br // beam_size,
                                         sizes[2],sizes[3])[:,:,idx]
+            else:
+                raise ValueError("check for the possible kind")    
 
             sent_states.data.copy_(
                 sent_states.data.index_select(1,positions))
@@ -231,7 +236,7 @@ class TransformerDecoderState(object):
 
     def repeat_beam_size_times(self,beam_size):
         #repeat beam size times along batch dimension
-        self.src = self.src.data.repeat(1,beam_size,1)
+        self.src = self.src.data.repeat(1,beam_size)
     
     def map_batch_fn(self,fn):
         def _recursive_map(struct,batch_dim=0):

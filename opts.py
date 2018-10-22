@@ -43,11 +43,11 @@ def model_opts(parser):
                        are experimental. Options are
                        [rnn|transformer|cnn].""")
 
-    group.add_argument('-num_layer', type=int, default=2,
+    group.add_argument('-num_layer', type=int, default=3,
                        help='Number of layers in the encoder')
-    group.add_argument('-enc_layer', type=int, default=2,
+    group.add_argument('-enc_layer', type=int, default=3,
                        help='Number of layers in the encoder')
-    group.add_argument('-dec_layer', type=int, default=2,
+    group.add_argument('-dec_layer', type=int, default=3,
                        help='Number of layers in the decoder')
     group.add_argument('-model_dim', type=int, default=64,
                        help='Size of rnn hidden states')
@@ -159,7 +159,7 @@ def train_opts(parser):
     group = parser.add_argument_group('training_setting')
     group.add_argument('-valid_steps', type=int, default=1000,
                        help='Perfom validation every X steps')
-    group.add_argument('-valid_batch_size', type=int, default=32,
+    group.add_argument('-valid_batch_size', type=int, default=16,
                        help='Maximum batch size for validation')
     group.add_argument('-max_generator_batches', type=int, default=32,
                        help="""Maximum batches of words in a sequence to run
@@ -230,7 +230,7 @@ def train_opts(parser):
     group = parser.add_argument_group('Logging')
     group.add_argument('-report_every', type=int, default=100,
                        help="Print stats at this interval.")
-    group.add_argument('-log_file', type=str, default="./logger",
+    group.add_argument('-log_file', type=str, default="/logger",
                        help="Output logs to a file under this path.")
     # Use TensorboardX for visualization during training
     group.add_argument('-tensorboard', action="store_false",
@@ -280,7 +280,7 @@ def translation_opts(parser):
     group.add_argument('-fast', action="store_true",
                        help="""Use fast beam search (some features may not be
                        supported!)""")
-    group.add_argument('-beam_size', type=int, default=3,
+    group.add_argument('-beam_size', type=int, default=1,
                        help='Beam size')
     group.add_argument('-min_length', type=int, default=0,
                        help='Minimum prediction length')
@@ -334,7 +334,7 @@ def translation_opts(parser):
                        decoded sentences""")
 
     group = parser.add_argument_group('Efficiency')
-    group.add_argument('-batch_size', type=int, default=2,
+    group.add_argument('-batch_size', type=int, default=32,
                        help='Batch size')
     group.add_argument('-gpu', type=int, default=0,
                        help="Device to run on")

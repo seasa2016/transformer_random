@@ -2,7 +2,7 @@ import argparse
 import os
 import torch
 import random
-
+import sys
 from data.dataloader import itemDataset,ToTensor,collate_fn
 from torch.utils.data import Dataset,DataLoader
 from torchvision import transforms, utils
@@ -44,12 +44,12 @@ def training_opt_postprocessing(opt):
 
 def main(opt):
     opt = training_opt_postprocessing(opt)
-    init_logger(opt.log_file)
+    init_logger(opt)
 
     if(opt.train_from):
         logger.info('loading checkpoint from {0}'.format(opt.train_from))
-        checkpoint = torch.load(opt.train_from,
-                            map_location=lambda storage,loc:storage)
+        device = torch.device('cpu')
+        checkpoint = torch.load(opt.train_from,map_location=device)
         
         model_opt = checkpoint['opt']
     else:
@@ -74,19 +74,19 @@ def main(opt):
 
     logger.info("start build model")
     model = build_model(opt,data_token,checkpoint)
-
-
+    logger.info(model)
+        
     logger.info("start build training,validing data")
   
     train_dataset = itemDataset(file_name='./data/playlist_20180826_train.csv',
                         transform=transforms.Compose([ToTensor()]))
     trainloader = DataLoader(train_dataset, batch_size=opt.batch_size ,
-                        shuffle=False, num_workers=16,collate_fn=collate_fn)
+                        shuffle=False, num_workers=32,collate_fn=collate_fn)
 
     valid_dataset = itemDataset(file_name='./data/playlist_20180826_valid.csv',
                         transform=transforms.Compose([ToTensor()]))
     validloader = DataLoader(valid_dataset, batch_size=opt.valid_batch_size,
-                        shuffle=False, num_workers=16,collate_fn=collate_fn)
+                        shuffle=False, num_workers=32,collate_fn=collate_fn)
   
     logger.info("finish build training,validing data")
   

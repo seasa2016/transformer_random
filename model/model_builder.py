@@ -64,13 +64,13 @@ def load_test_model(opt,model_path=None):
             raise ValueError('test_from shouble not be None')
         model_path = opt.test_from
     
-    checkpoint = torch.load(model_path,map_location=lambda storage, loc: storage)
+    checkpoint = torch.load(model_path)
 
     data_token = dict()
     for t in ['source','target']:
         data_token[t] = dict()
 
-        with open('./data/subword.{0}'.format(t)) as f_in:
+        with open('./ch_en/subword.{0}'.format(t)) as f_in:
             for i,word in enumerate(f_in):
                 data_token[t][word.strip()[1:-1]] = i
 

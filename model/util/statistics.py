@@ -3,6 +3,7 @@ from __future__ import division
 import time
 import math
 import sys
+import numpy as np
 
 from torch.distributed import get_rank
 from .distribute import all_gather_list
@@ -127,9 +128,9 @@ class Statistics(object):
         """ display statistics to tensorboard """
         t = self.elapsed_time()
         
-        writer.add_scalar(prefix+"/xent", self.xent(), step)
-        writer.add_scalar(prefix+"/ppl", self.ppl(), step)
-        writer.add_scalar(prefix+"/accuracy", self.accuracy(), step)
-        writer.add_scalar(prefix+"/tgtper", self.n_words / t, step)
-        
-        writer.add_scalar(prefix+"/lr", learning_rate, step)
+        writer.add_scalars("train/xent",{prefix: np.array(self.xent())}, step)
+        writer.add_scalars("train/ppl", {prefix:np.array(self.ppl())}, step)
+        writer.add_scalars("train/accuracy", {prefix:np.array(self.accuracy())}, step)
+        writer.add_scalars("train/tgtper", {prefix:np.array(self.n_words / t)}, step)
+        if(prefix=="train"):
+            writer.add_scalar("train/lr", learning_rate, step)

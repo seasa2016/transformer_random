@@ -30,7 +30,7 @@ def build_trainer(opt,model,optim,report_manager,checkpoint=None,model_saver=Non
 
     #first build the training and valid loss function.
     #read the length from the label file
-    with open('./data/subword.target') as f:
+    with open('./ch_en/subword.target') as f:
         target_dict_len = len(f.readlines())
     
     train_loss = Loss.build_loss_computer(model,target_dict_len,opt)
@@ -121,7 +121,7 @@ class Trainer(object):
         """
         logger.info('start training...')
 
-        step = self.optim._step
+        step = self.optim._step + 1
         true_batchs = []
         accum = 0
         normalization = 0
@@ -147,10 +147,15 @@ class Trainer(object):
                     true_batchs.append(batch)
 
                     if(self.norm_method == 'tokens'):
-                        normalization += ( torch.sum(batch['target_len']) - batch['target_len'].shape[0])
+                        try:
+                            num_tokens = batch['target'].ne(Constant.PAD).sum()
+                        except:
+                            print(batch['target'])
+                            num_tokens = batch['target'].ne(Constant.PAD).sum()
+                        normalization += num_tokens.item()
                     else:
                         normalization += batch['target'].shape[0]
-
+                    
                     accum += 1
                     if(accum == self.grad_accum_count):
                         reduce_counter += 1
@@ -204,6 +209,7 @@ class Trainer(object):
             if( self.gpu_verbose_level > 0):
                 logger.info('GpuRank %d: we completed an epoch \
                             at step %d' % (self.gpu_rank, step))
+        valid_stats = self.validate(valid_loader)
         return total_stats
 
     def validate(self,valid_loader):
@@ -223,7 +229,7 @@ class Trainer(object):
                 )
             
             batch_stat = self.valid_loss.monolithic_compute_loss(
-                batch['target'],output,attn,batch['origin'])
+                batch['target'],output,attn)
             
             stats.update(batch_stat)
             
@@ -264,11 +270,10 @@ class Trainer(object):
                 output, attn, dec_state = self.model(
                     batch['source'],target,batch['source_len'],dec_state
                 )
-                
-                print("qqq",output.shape )
+
                 batch_stat = self.train_loss.sharded_compute_loss(
                     batch['target'], output, attn, j,
-                    trunc_size+1, self.shard_size , normalization,batch)
+                    trunc_size+1, self.shard_size , normalization)
 
                 total_stats.update(batch_stat)
                 report_stats.update(batch_stat)

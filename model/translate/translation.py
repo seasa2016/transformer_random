@@ -1,4 +1,12 @@
 import torch
+import six
+import unicodedata
+import sys
+
+ALPHANUMERIC_CHAR_SET = set(
+    six.unichr(i) for i in range(sys.maxunicode)
+    if (unicodedata.category(six.unichr(i)).startswith("L") or
+        unicodedata.category(six.unichr(i)).startswith("N")))
 
 
 class TranslationBuilder(object):
@@ -25,7 +33,7 @@ class TranslationBuilder(object):
         self.vocab = {}
         for t in ['source','target']:
             self.vocab[t] = []
-            with open('./data/subword.{0}'.format(t)) as f:
+            with open('./ch_en/subword.{0}'.format(t)) as f:
                 for word in f:
                     word = word.strip()[1:-1].replace('_',' ')
                     word = word.replace('\\u',' ')
@@ -40,12 +48,20 @@ class TranslationBuilder(object):
             raise ValueError("you should choose a source type to convert")
 
         vocab = self.vocab[ttype]
-        target = ''
-        for tok in pred:
+        
+        temp = []
+        for _ in pred:
             try:
-                target += vocab[tok]
+                temp.append(vocab[_])
             except KeyError as e:
                 raise KeyError('the word {0} is unsee '.format(e.args[0]))
+
+        target = ''+temp[0]
+        for i in range(1,len(temp)):
+            if((temp[i-1][0] in ALPHANUMERIC_CHAR_SET ) != (temp[i][0] in ALPHANUMERIC_CHAR_SET )):
+                target = target[:-1]    
+            target += temp[i]
+
         return target
 
     def from_batch(self,translation_batch,num):
@@ -66,10 +82,10 @@ class TranslationBuilder(object):
         # Sorting
         inds, perm = torch.sort(indices_temp)
         
-        src = batch['source'].data.index_select(1, perm)
+        src = batch['source'].index_select(1, perm)
         
         if('target' in batch):
-            tgt = batch.tgt.data.index_select(1, perm)
+            tgt = batch['target'].index_select(1, perm)
         else:
             tgt = None
 
@@ -137,7 +153,7 @@ class Translation(object):
         if self.target_sent is not None:
             tgt_sent = self.target_sent
             output += 'GOLD {}: {}\n'.format(sent_number, tgt_sent)
-            output += ("GOLD SCORE: {:.4f}\n".format(self.target_sent))
+            output += ("GOLD SCORE: {:.4f}\n".format(self.target_scores))
         if len(self.pred_sent) > 1:
             output += '\nBEST HYP:\n'
             for score, sent in zip(self.pred_scores, self.pred_sent):

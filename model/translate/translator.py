@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import torch
 import sys
 #dataset
-from data.dataloader import itemDataset,ToTensor,collate_fn
+from ch_en.dataloader import itemDataset,ToTensor,collate_fn
 from torch.utils.data import Dataset,DataLoader
 from torchvision import transforms, utils
 
@@ -27,7 +27,7 @@ import opts
 
 def to_gpu(batch,cuda):
     if(cuda):
-        for name in ['source','target']:
+        for name in ['source','target','source_len','target_len']:
             if(name in batch):
                 batch[name] = batch[name].cuda()
     return batch
@@ -139,7 +139,7 @@ class Translator(object):
         self.vocab = {}
         #set up the vocab for decode
         self.vocab['target'] = {}
-        with open('./data/subword.target') as f:
+        with open('./ch_en/subword.target') as f:
             for i,word in enumerate(f):
                 word = word.strip()
                 self.vocab['target'][ word[1:-1] ] = i
@@ -154,10 +154,10 @@ class Translator(object):
                 "scores": [],
                 "log_probs": []}
 
-
     def translate(self,
                     src_path=None,
                     tgt_path=None,
+                    tgt_truth=None,
                     src_data_iter=None,
                     tgt_data_iter=None,
                     attn_debug=False):
@@ -194,19 +194,9 @@ class Translator(object):
 
         device = torch.device("cuda" if self.cuda else "cpu")
 
-    
-        #feature_type = ['source','target']
-        #data_size = dict()
-        #for name in feature_type:
-        #   with open('./ch_en/subword.{0}'.format(name)) as f_in:
-        #       data_size[name] = len(f_in.readlines())
-        
-        
         test_dataset = itemDataset(file_source=src_path,file_target=tgt_path,transform=transforms.Compose([ToTensor()]))
         self.dataloader = DataLoader(test_dataset, batch_size=self.batch_size,shuffle=False, num_workers=10,collate_fn=collate_fn)
-            
-
-
+    
         builder  = translation.TranslationBuilder(
             self.n_best, self.replace_unk,tgt_path is not None
         )
@@ -219,7 +209,6 @@ class Translator(object):
         all_predictions = []
 
         for num,batch in enumerate(self.dataloader):
-            print("num",num)
             batch = to_gpu(batch,device)
             batch_data = self.translate_batch(batch,fast=self.fast)
             translations = builder.from_batch(batch_data,num)
@@ -229,11 +218,10 @@ class Translator(object):
                 pred_score_total += trans.pred_scores[0]
                 pred_words_total += len(trans.pred_sent[0])
                 if tgt_path is not None:
-                    gold_score_total += trans.gold_score
-                    gold_words_total += len(trans.gold_sent) + 1
+                    gold_score_total += trans.target_scores
+                    gold_words_total += len(trans.target_sent) + 1
 
-                n_best_preds = [pred 
-                                for pred in trans.pred_sent]
+                n_best_preds = [pred for pred in trans.pred_sent]
                 all_predictions += [n_best_preds]
 
                 self.out_file.write('\n'.join(n_best_preds)+'\n')
@@ -267,13 +255,13 @@ class Translator(object):
                     os.write(1, output.encode('utf-8'))
 
         if self.report_score:
-            msg = self._report_score('PRED', pred_score_total,
-                                     pred_words_total)
+            msg = self._report_score('PRED', pred_score_total,pred_words_total)
             if self.logger:
                 self.logger.info(msg)
             else:
                 print(msg)
-            if tgt_path is not None:
+
+            if tgt_truth is not None:
                 msg = self._report_score('GOLD', gold_score_total,
                                          gold_words_total)
                 if self.logger:
@@ -281,21 +269,23 @@ class Translator(object):
                 else:
                     print(msg)
                 if self.report_bleu:
-                    msg = self._report_bleu(tgt_path)
+                    msg = self._report_bleu(tgt_truth)
                     if self.logger:
                         self.logger.info(msg)
                     else:
                         print(msg)
                 if self.report_rouge:
-                    msg = self._report_rouge(tgt_path)
+                    msg = self._report_rouge(tgt_truth)
                     if self.logger:
                         self.logger.info(msg)
                     else:
                         print(msg)
+        if self.dump_beam:
+            import json
+            json.dump(self.beam_accum,
+                      codecs.open(self.dump_beam, 'w', 'utf-8'))
 
         return all_scores, all_predictions
-
-            
 
     def translate_batch(self,batch , fast=False):
         """
@@ -348,12 +338,12 @@ class Translator(object):
             batch['source'],memory_bank,enc_states,with_cache=True
         )
 
-        dec_states.map_batch_fn(
-            lambda state,dim:tile(state,beam_size,dim=dim)
-        )
 
-        memory_bank = tile(memory_bank,beam_size,dim=1)
-        memory_length = tile(torch.tensor(src_len).to(memory_bank.device),beam_size)
+        # Tile states and memory beam_size times.
+        dec_states.map_batch_fn(
+            lambda state, dim: tile(state, beam_size, dim=dim))
+        memory_bank = tile(memory_bank, beam_size, dim=1)
+        memory_length = tile(src_len, beam_size)
 
         batch_offset = torch.arange(
             batch_size, dtype=torch.long, device=memory_bank.device)
@@ -386,14 +376,14 @@ class Translator(object):
         results["batch"] = batch
 
         for step in range(max_length):
-            print()
-            print("*"*10)
-            print("batch_offset",batch_offset)
-            print("beam_offset",beam_offset)
-            print("alive_seq",alive_seq)
-            print("alive_attn",alive_attn)
-            print("results",results)
-            print("topk_log_probs",topk_log_probs)
+            #print()
+            #print("*"*10)
+            #print("batch_offset",batch_offset)
+            #print("beam_offset",beam_offset)
+            #print("alive_seq",alive_seq)
+            #print("alive_attn",alive_attn)
+            #print("results",results)
+            #print("topk_log_probs",topk_log_probs)
 
             decoder_input = alive_seq[:, -1].view(1, -1)
 
@@ -405,7 +395,7 @@ class Translator(object):
                 memory_length=memory_length,
                 step=step)
             #print('dec_out',dec_out.shape)
-            log_probs = F.log_softmax(dec_out,dim=-1).squeeze(0)
+            log_probs = F.log_softmax(dec_out.squeeze(0),dim=-1)
             #print('log_probs',log_probs.shape)
             #print(log_probs.shape)
             #print(log_probs[0][0][:100])
@@ -440,10 +430,12 @@ class Translator(object):
             batch_index = (
                 topk_beam_index
                 + beam_offset[:topk_beam_index.shape[0]].unsqueeze(1))
-            print("topk_beam_index",topk_beam_index)
+            """
+			print("topk_beam_index",topk_beam_index)
             print("beam_offset",beam_offset)
             print("batch_index",batch_index)
-
+            """
+            
             select_indices = batch_index.view(-1)
 
             # Append last prediction.
@@ -462,7 +454,6 @@ class Translator(object):
             if step + 1 == max_length:
                 is_finished.fill_(1)
             # End condition is top beam is finished.
-            ###################################################
             end_condition = is_finished[:, 0].eq(1)
 
             # Save finished hypotheses.
@@ -474,7 +465,7 @@ class Translator(object):
                     if alive_attn is not None else None)
                 for i in range(is_finished.shape[0]):
                     b = batch_offset[i]
-                    if(end_condition[i]):
+                    if end_condition[i]:
                         is_finished[i].fill_(1)
                     finished_hyp = is_finished[i].nonzero().view(-1)
                     # Store finished hypotheses for this batch.
@@ -485,7 +476,7 @@ class Translator(object):
                             attention[:, i, j, :memory_length[i]]
                             if attention is not None else None))
                     # If the batch reached the end, save the n_best hypotheses.
-                    if end_condition[i]:
+                    if(end_condition[i]):
                         best_hyp = sorted(
                             hypotheses[b], key=lambda x: x[0], reverse=True)
                         for n, (score, pred, attn) in enumerate(best_hyp):
@@ -504,11 +495,11 @@ class Translator(object):
                 batch_index = batch_index.index_select(0, non_finished)
                 batch_offset = batch_offset.index_select(0, non_finished)
                 alive_seq = predictions.index_select(0, non_finished) \
-                                       .view(-1, alive_seq.size(-1))
+                    .view(-1, alive_seq.shape[-1])
                 if alive_attn is not None:
                     alive_attn = attention.index_select(1, non_finished) \
-                                          .view(alive_attn.size(0),
-                                                -1, alive_attn.size(-1))
+                        .view(alive_attn.shape[0],
+                              -1, alive_attn.shape[-1])
 
             # Reorder states.
             select_indices = batch_index.view(-1)
@@ -517,7 +508,7 @@ class Translator(object):
             dec_states.map_batch_fn(
                 lambda state, dim: state.index_select(dim, select_indices))
 
-        sys.exit(-1)
+        #sys.exit(-1)
         #print('results["predictions"]',results["predictions"])
 
         return results
@@ -576,8 +567,6 @@ class Translator(object):
             inp = var(torch.stack([b.get_current_state() for b in beam])
                     .t().contiguous().view(1,-1))
 
-            inp = inp.unsqueeze(2)
-
             dec_out, dec_state, attn = self.model.decoder(
                 inp,memory_bank,dec_state,
                 memory_length=memory_length,step=i
@@ -587,7 +576,7 @@ class Translator(object):
 
             #we dont use copy attention here
             if(not self.copy_attn):
-                out = F.log_softmax(dec_out).data
+                out = F.log_softmax(dec_out,dim=-1).data
 
                 out = unbottle(out)
                 beam_attn = unbottle(attn["std"])
@@ -601,7 +590,7 @@ class Translator(object):
         ret = self._from_beam(beam)
         #here means that it has the reference answer
         ret["gold_score"] = [0] * batch_size
-        if("target" in batch.__dict__):
+        if("target" in batch):
             ret['gold_score'] = self._run_target(batch)
         ret['batch'] = batch
 
@@ -626,9 +615,36 @@ class Translator(object):
         return ret
 
     def _run_target(self,batch):
-        #i think it might not be use, we pass it first
-        pass
-        return None
+        """
+            this output will reproduce the log probability of the 
+            target answer
+        """
+        src = batch['source']
+        tgt_in = batch['target'][:-1]
+        src_lengths = batch['source_len']
+
+        enc_states, memory_bank, _ \
+            = self.model.encoder(src, src_lengths)
+        dec_states = \
+            self.model.decoder.init_decoder_state(src, memory_bank, enc_states)
+
+        gold_scores = torch.zeros(src.shape[1],dtype=torch.float) + 0
+        if(torch.cuda.is_available()):
+            gold_scores = gold_scores.cuda()
+       
+        dec_out, _, _ = self.model.decoder(
+            tgt_in, memory_bank, dec_states, memory_length=src_lengths)
+
+        dec_out = F.log_softmax(dec_out,dim=-1)
+
+        tgt_pad = Constant.PAD
+        for dec,tgt in zip(dec_out,tgt_in.data):
+            tgt = tgt.unsqueeze(1)
+            scores = dec.gather(1,tgt)
+            scores.masked_fill_(tgt.eq(tgt_pad),0)
+            gold_scores += scores.view(-1)
+
+        return gold_scores
 
         
     def _report_score(self, name, score_total, words_total):
