@@ -202,7 +202,7 @@ class LabelSmoothingLoss(nn.Module):
             now = now*shard_size+i//part
             #for the last put eos
             if( now == origin.shape[1] ):
-            
+                break
             #else put available ans
             else:  
                 model_prob[i][ origin[i%part][now:] ] = 1
