@@ -3,9 +3,9 @@ import argparse
 
 def model_opts(parser):
     group = parser.add_argument_group('model_embedding')
-    group.add_argument('-src_word_vec_size', type=int, default=64,
+    group.add_argument('-src_word_vec_size', type=int, default=512,
                        help='Word embedding size for src.')
-    group.add_argument('-tar_word_vec_size', type=int, default=64,
+    group.add_argument('-tar_word_vec_size', type=int, default=512,
                        help='Word embedding size for tgt.')
 
     group.add_argument('-share_decoder_embeddings', action='store_true',
@@ -25,7 +25,7 @@ def model_opts(parser):
                        choices=['concat', 'sum', 'mlp'],
                        help="""Merge action for incorporating features embeddings.
                        Options [concat|sum|mlp].""")
-    group.add_argument('-feat_vec_size', type=int, default=64,
+    group.add_argument('-feat_vec_size', type=int, default=512,
                        help="""If specified, feature embedding sizes
                        will be set to this. Otherwise, feat_vec_exponent
                        will be used.""")
@@ -43,15 +43,15 @@ def model_opts(parser):
                        are experimental. Options are
                        [rnn|transformer|cnn].""")
 
-    group.add_argument('-num_layer', type=int, default=3,
+    group.add_argument('-num_layer', type=int, default=6,
                        help='Number of layers in the encoder')
-    group.add_argument('-enc_layer', type=int, default=3,
+    group.add_argument('-enc_layer', type=int, default=6,
                        help='Number of layers in the encoder')
-    group.add_argument('-dec_layer', type=int, default=3,
+    group.add_argument('-dec_layer', type=int, default=6,
                        help='Number of layers in the decoder')
-    group.add_argument('-model_dim', type=int, default=64,
+    group.add_argument('-model_dim', type=int, default=512,
                        help='Size of rnn hidden states')
-    group.add_argument('-nin_dim', type=int, default=128,
+    group.add_argument('-nin_dim', type=int, default=2048,
                        help='Size of hidden transformer feed-forward')
     
 
@@ -70,7 +70,7 @@ def model_opts(parser):
     group.add_argument('-num_head', type=int, default=8,
                        help='Number of heads for transformer self-attention')
 
-    group.add_argument('-copy_attn', action='store_false',
+    group.add_argument('-copy_attn', action='store_true',
                        help='this is for pointer network copy the answer from input')
 
 
@@ -139,7 +139,7 @@ def train_opts(parser):
 
     # Optimization options
     group = parser.add_argument_group('Optimization- Type')
-    group.add_argument('-batch_size', type=int, default=64,
+    group.add_argument('-batch_size', type=int, default=60,
                        help='Maximum batch size for training')
     group.add_argument('-batch_type', default='tokens',
                        choices=["sents", "tokens"],
@@ -149,7 +149,7 @@ def train_opts(parser):
                        choices=["sents", "tokens"],
                        help='Normalization method of the gradient.')
     #this should be able to fix up the batch size problem
-    group.add_argument('-accum_count', type=int, default=1,
+    group.add_argument('-accum_count', type=int, default=2,
                        help="""Accumulate gradient this many times.
                        Approximately equivalent to updating
                        batch_size * accum_count batches at once.
@@ -159,13 +159,13 @@ def train_opts(parser):
     group = parser.add_argument_group('training_setting')
     group.add_argument('-valid_steps', type=int, default=1000,
                        help='Perfom validation every X steps')
-    group.add_argument('-valid_batch_size', type=int, default=16,
+    group.add_argument('-valid_batch_size', type=int, default=32,
                        help='Maximum batch size for validation')
-    group.add_argument('-max_generator_batches', type=int, default=32,
+    group.add_argument('-max_generator_batches', type=int, default=16,
                        help="""Maximum batches of words in a sequence to run
                         the generator on in parallel. Higher is faster, but
                         uses more memory.""")
-    group.add_argument('-train_steps', type=int, default=250000,
+    group.add_argument('-train_steps', type=int, default=300000,
                        help='Number of training steps')
     group.add_argument('-epochs', type=int, default=100,
                        help='Deprecated epochs see train_steps')
@@ -230,7 +230,7 @@ def train_opts(parser):
     group = parser.add_argument_group('Logging')
     group.add_argument('-report_every', type=int, default=100,
                        help="Print stats at this interval.")
-    group.add_argument('-log_file', type=str, default="./logger",
+    group.add_argument('-log_file', type=str, default="/logger",
                        help="Output logs to a file under this path.")
     # Use TensorboardX for visualization during training
     group.add_argument('-tensorboard', action="store_false",
@@ -259,7 +259,9 @@ def translation_opts(parser):
                        help="""Source sequence to decode (one line per
                        sequence)""")
     group.add_argument('-tgt', default=None,
-                       help='True target sequence (optional)')
+                       help='True target sequence in token(optional)')
+    group.add_argument('-tgt_truth', default=None,
+                       help='True target sequence in word (optional)')
     group.add_argument('-output', default='pred.txt',
                        help="""Path to output the predictions (each line will
                        be the decoded sequence""")
@@ -280,9 +282,9 @@ def translation_opts(parser):
     group.add_argument('-fast', action="store_true",
                        help="""Use fast beam search (some features may not be
                        supported!)""")
-    group.add_argument('-beam_size', type=int, default=1,
+    group.add_argument('-beam_size', type=int, default=3,
                        help='Beam size')
-    group.add_argument('-min_length', type=int, default=0,
+    group.add_argument('-min_length', type=int, default=5,
                        help='Minimum prediction length')
     group.add_argument('-max_length', type=int, default=100,
                        help='Maximum prediction length.')
@@ -305,7 +307,7 @@ def translation_opts(parser):
                         (higher = longer generation)""")
     group.add_argument('-beta', type=float, default=-0.,
                        help="""Coverage penalty parameter""")
-    group.add_argument('-block_ngram_repeat', type=int, default=0,
+    group.add_argument('-block_ngram_repeat', type=int, default=3,
                        help='Block repetition of ngrams during decoding.')
     group.add_argument('-ignore_when_blocking', nargs='+', type=str,
                        default=[],
@@ -323,12 +325,12 @@ def translation_opts(parser):
     group = parser.add_argument_group('Logging')
     group.add_argument('-verbose', action="store_true",
                        help='Print scores and predictions for each sentence')
-    group.add_argument('-log_file', type=str, default="",
+    group.add_argument('-show', action="store_true",
+                       help="whether to show on screem.")
+    group.add_argument('-log_file', type=str, default="./logger",
                        help="Output logs to a file under this path.")
     group.add_argument('-attn_debug', action="store_true",
                        help='Print best attn for each word')
-    group.add_argument('-show', action="store_true",
-                       help='show the data on the screen')
     group.add_argument('-dump_beam', type=str, default="",
                        help='File to dump beam information to.')
     group.add_argument('-n_best', type=int, default=1,

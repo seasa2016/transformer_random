@@ -48,13 +48,13 @@ class ToTensor(object):
             return  {
                     'source':torch.tensor(sample['source'],dtype=torch.long),
                     'target':torch.tensor(sample['target'],dtype=torch.long),
-                    'source_len':sample['source_len'],
-                    'target_len':sample['target_len']
+                    'source_len':torch.tensor(sample['source_len'],dtype=torch.long),
+                    'target_len':torch.tensor(sample['target_len'],dtype=torch.long),
                     }
         else:
             return  {
                     'source':torch.tensor(sample['source'],dtype=torch.long),
-                    'source_len':sample['source_len']
+                    'source_len':torch.tensor(sample['source_len'],dtype=torch.long),
                     }
 
 
@@ -86,11 +86,11 @@ def collate_fn(data):
     
     #print("output",output)
     output['source'] = output['source'].transpose(0,1)
-    output['source_len'] = np.concatenate([ data[i]['source_len'] for i in range(len(data))],axis=0)
+    output['source_len'] = torch.cat([ data[i]['source_len'] for i in range(len(data))],dim=0)
 
     if('target' in output):
         output['target'] = output['target'].transpose(0,1)
-        output['target_len'] = np.concatenate([ data[i]['target_len'] for i in range(len(data))],axis=0)
+        output['target_len'] = torch.cat([ data[i]['target_len'] for i in range(len(data))],dim=0)
 
     return output
 
