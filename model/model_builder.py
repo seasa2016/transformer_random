@@ -9,7 +9,7 @@ from . import transformer
 
 
 
-def build_embedding(opt,word_dict,max_len,for_encoder=True):
+def build_embedding(opt,word_dict,max_len,for_encoder=True,dtype='sum'):
     if(for_encoder):
         embedding_dim = opt.src_word_vec_size
     else:
@@ -27,7 +27,7 @@ def build_embedding(opt,word_dict,max_len,for_encoder=True):
                     feature_dim = embedding_dim,
                     padding_idx = word_padding_idx,
                     dropout = opt.dropout,
-                    dtype = 'sum')
+                    dtype = dtype)
 
 def build_encoder(opt,src_dict):
     """
@@ -48,7 +48,7 @@ def build_decoder(opt,tar_dict):
     """
 
     max_len = 128
-    tar_embedding = build_embedding(opt,tar_dict,max_len,for_encoder=False)
+    tar_embedding = build_embedding(opt,tar_dict,max_len,for_encoder=False,dtype='none')
     return transformer.Decoder(
         opt.num_layer,opt.num_head,
         opt.model_dim,opt.nin_dim,len(tar_dict),max_len,
@@ -70,7 +70,7 @@ def load_test_model(opt,model_path=None):
     for t in ['source','target']:
         data_token[t] = dict()
 
-        with open('./ch_en/subword.{0}'.format(t)) as f_in:
+        with open('./data/subword.{0}'.format(t)) as f_in:
             for i,word in enumerate(f_in):
                 data_token[t][word.strip()[1:-1]] = i
 

@@ -33,7 +33,7 @@ class TranslationBuilder(object):
         self.vocab = {}
         for t in ['source','target']:
             self.vocab[t] = []
-            with open('./ch_en/subword.{0}'.format(t)) as f:
+            with open('./data/subword.{0}'.format(t)) as f:
                 for word in f:
                     word = word.strip()[1:-1].replace('_',' ')
                     word = word.replace('\\u',' ')

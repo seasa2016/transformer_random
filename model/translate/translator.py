@@ -139,7 +139,7 @@ class Translator(object):
         self.vocab = {}
         #set up the vocab for decode
         self.vocab['target'] = {}
-        with open('./ch_en/subword.target') as f:
+        with open('./data/subword.target') as f:
             for i,word in enumerate(f):
                 word = word.strip()
                 self.vocab['target'][ word[1:-1] ] = i

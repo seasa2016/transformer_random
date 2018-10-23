@@ -74,6 +74,8 @@ class beam(object):
 
         Returns: True if beam search is complete.
         """
+        #print("self._eos",self._eos)
+        #print("word_probs",word_probs.shape)
         word_probs = F.log_softmax(word_probs,dim=-1)
         num_words = word_probs.shape[1]
         if(self.stepwise_penalty):
@@ -81,22 +83,22 @@ class beam(object):
         
         #force the output to be longer than self.min
         cur_len = len(self.next_ys)
-        
+        #print("self.next_ys",self.next_ys[-1])
         if(cur_len < self.min_length):
-            for k in range(len(word_probs)):
+            for k in range(word_probs.shape[0]):
                 word_probs[k][self._eos] = -1e20
         
         #sum previous scores.
         if(len(self.prev_ks)>0):
-            beam_scores = word_probs + \
-                self.scores.unsqueeze(1).expand_as(word_probs)
+            beam_scores = word_probs + self.scores.unsqueeze(1).expand_as(word_probs)
             #end at eos
-            for i in range(self.next_ys[-1].shape[0]):
+            for i in range( self.next_ys[-1].shape[0] ):
                 if(self.next_ys[-1][i] == self._eos):
                     beam_scores[i] = -1e20
             
             #block ngram repeats
             if(self.block_ngram_repeat>0):
+                """
                 ngrams = []
                 le = len(self.next_ys)
                 for j in range(self.next_ys[-1].shape[0]):
@@ -116,13 +118,38 @@ class beam(object):
                             fail = True
                         ngrams.add(tuple(gram))
                     if(fail):
+                        print("pos",le)
                         beam_scores[j] = -10e20
+                """
+                #here we dont want to generate the same pattern
+                #rather than stop at that time 
+                
+                le = len(self.next_ys)
+                if(le >= self.block_ngram_repeat):
+                    for j in range(self.next_ys[-1].shape[0]):
+                        hyp,_ = self.get_hyp(le-1,j)
+
+                        check = hyp[:self.block_ngram_repeat-1]
+
+                        gram = []
+
+                        for i in range(le-1):
+                            #last n tokens, n = block_ngram_repeat
+                            gram = ( gram + [hyp[i].item()] )[-self.block_ngram_repeat:]
+
+                            print(gram)
+                            if(set(gram)&self.exclusion_tokens):
+                                continue
+
+                            if(gram[:self.block_ngram_repeat-1] == check):
+                                print("pos",le)
+                                beam_scores[j, gram[-1] ] = -1e20
         else:
             beam_scores = word_probs[0]
-        
+        print('*'*10)
         flat_beam_scores = beam_scores.view(-1)
-        best_scores,best_scores_id = flat_beam_scores.topk(self.size,0,
-                                                            True,True)
+        best_scores,best_scores_id = flat_beam_scores.topk(self.size,0,True,True)
+        #print("beat",best_scores,best_scores_id)
         
         self.all_scores.append(self.scores)
         self.scores = best_scores
