@@ -30,7 +30,7 @@ def build_trainer(opt,model,optim,report_manager,checkpoint=None,model_saver=Non
 
     #first build the training and valid loss function.
     #read the length from the label file
-    with open('./ch_en/subword.target') as f:
+    with open('./data/subword.target') as f:
         target_dict_len = len(f.readlines())
     
     train_loss = Loss.build_loss_computer(model,target_dict_len,opt)
@@ -229,7 +229,7 @@ class Trainer(object):
                 )
             
             batch_stat = self.valid_loss.monolithic_compute_loss(
-                batch['target'],output,attn)
+                batch,output,attn)
             
             stats.update(batch_stat)
             
@@ -266,13 +266,12 @@ class Trainer(object):
                 
                 if(self.grad_accum_count == 1):
                     self.model.zero_grad()
-               
                 output, attn, dec_state = self.model(
                     batch['source'],target,batch['source_len'],dec_state
                 )
 
                 batch_stat = self.train_loss.sharded_compute_loss(
-                    batch['target'], output, attn, j,
+                    batch, output, attn, j,
                     trunc_size+1, self.shard_size , normalization)
 
                 total_stats.update(batch_stat)

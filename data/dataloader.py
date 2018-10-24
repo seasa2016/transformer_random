@@ -11,25 +11,41 @@ class itemDataset(Dataset):
         
         temp = pd.read_csv(file_name)
         self.data=[]
+        a = 0
+        b = 0
+        c = 100
+        d = 100
         for i in range(temp.shape[0]):
             raw = temp.iloc[i]
             playlist = dict()
-            
-            for name in ["source","target"]:
+            for name in ["source","target","language"]:
                 playlist[name] = []
                 if(isinstance(raw[name],float)):
                     continue
+                if(type(raw[name]) != np.int64):
+                    for _ in raw[name].strip().split(","):
+                        playlist[name].append(int(_))
+                else:
+                    playlist[name] = [raw[name]+2]
 
-                for _ in raw[name].strip().split(","):
-                    playlist[name].append(int(_))
-            
-            playlist['source_len'] = [ len(playlist['source']) ]
-            playlist['target_len'] = [ len(playlist['target']) ]
-            playlist["source"] = np.array(playlist["source"])
-            playlist["target"] = np.array(playlist["target"][1:-1])
+            if(len(playlist['source'])<5 or len(playlist['target'])<5 ):
+                continue
+            if(len(playlist['source'])>a):
+                a = len(playlist['source'])
+            if(len(playlist['target'])>b):
+                b = len(playlist['target'])
+            if(len(playlist['source'])<c):
+                c = len(playlist['source'])
+            if(len(playlist['target'])<d):
+                d = len(playlist['target'])
 
+            playlist['source_len'] = [ len(playlist['source']) +2]
+            playlist['target_len'] = [ len(playlist['target']) +2]
+            playlist["source"] = np.array(playlist["language"] + playlist["source"]+[1],dtype=np.long)
+            playlist["target"] = np.array(playlist["target"],dtype=np.long)
             self.data.append(playlist)
-
+        print("max",a,b)
+        print("min",c,d)
 
         self.transform = transform
     def __len__(self):
@@ -44,7 +60,7 @@ class ToTensor(object):
     def __call__(self,sample):
         #prlong(sample)
         np.random.shuffle(sample['target'])
-        qq = sample['target']
+        qq = sample['target'].copy()
         sample['target'] = np.concatenate([[2],sample['target'],[1]])
         return{
             'source':torch.tensor(sample['source'],dtype=torch.long),
@@ -86,7 +102,7 @@ def collate_fn(data):
 
 if(__name__ == '__main__'):
     print('QQQ')
-    dataset = itemDataset(file_name='playlist_20180826_train.csv',
+    dataset = itemDataset(file_name='playlist_20181023_train.csv',
                                 transform=transforms.Compose([ToTensor()]))
     
     
@@ -94,9 +110,8 @@ if(__name__ == '__main__'):
                         shuffle=False, num_workers=10,collate_fn=collate_fn)
 
     for i,data in enumerate(dataloader):
-        if(i==0):
-            print(data) 
-        break
-        # print(i)
-
+        #if(i==0):
+        #    print(data) 
+        #break
+        print(i)
             

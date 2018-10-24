@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import model.Constant as Constant
 from . import statistics
 from .Logger import logger
+import numpy as np
 
 def build_loss_computer(model,tgt_dict_size,opt,train=True):
     """
@@ -74,7 +75,20 @@ class LossComputeBase(nn.Module):
         """
         return NotImplementedError
 
-    def monolithic_compute_loss(self,tgt,output,attns,origin):
+    def _compute_corr(self, output, origin):
+        """
+        Compute the loss. Subclass must define this method.
+
+        Args:
+
+            batch: the current batch.
+            output: the predict output from the model.
+            target: the validate target to compare output with.
+            **kwargs(optional): additional info for computing loss.
+        """
+        return NotImplementedError
+
+    def monolithic_compute_loss(self,batch,output,attns):
         """
         Compute the forward loss for the batch.
 
@@ -88,13 +102,17 @@ class LossComputeBase(nn.Module):
         Returns:
             obj:`onmt.utils.Statistics`: loss statistics
         """
-        range_ = (0,tgt.shape[0])
-        shard_state = self._make_shard_state(tgt,output,range_,attns)
-        _,batch_stats = self._compute_loss(**shard_state)
+        range_ = (0,batch['target'].shape[0])
+        shard_state = self._make_shard_state(batch['target'],output,range_,attns)
+        
+        loss = self._compute_loss(**shard_state,shard_size=batch['target'].shape[0],batch=batch)
+        num_non_padding,num_correct = self._compute_corr(output,batch['origin'])
+
+        batch_stats = statistics.Statistics(loss.item(),num_non_padding,num_correct)
         return batch_stats
 
-    def sharded_compute_loss(self,tgt,output,attns,
-                            cur_trunc,trunc_size,shard_size,normalization,batch):
+    def sharded_compute_loss(self,batch,output,attns,
+                            cur_trunc,trunc_size,shard_size,normalization):
         """
         Compute the forward loss and backpropagate.  Computation is done
         with shards and optionally truncation for memory efficiency.
@@ -123,22 +141,27 @@ class LossComputeBase(nn.Module):
             :obj:`onmt.utils.Statistics`: validation loss statistics
 
         """
-        batch_stats = statistics.Statistics()  
         
         range_ = (cur_trunc,cur_trunc + trunc_size)
-        shard_state = self._make_shard_state(tgt,output,range_,attns)
+        shard_state = self._make_shard_state(batch['target'],output,range_,attns)
         
+        loss_total = 0
         for i,shard in enumerate(shards(shard_state,shard_size)):
-            loss, stats = self._compute_loss(**shard,shard_size=shard_size,origin=origin,now=i)
+            loss = self._compute_loss(**shard,shard_size=shard_size,batch=batch,now=i)
             
             #compute the gradient
             loss.div(float(normalization)).backward()
 
-            batch_stats.update(stats)
+            loss_total += loss.item()
+            #batch_stats.update(stats)
         
+        num_non_padding,corr = self._compute_corr(output,batch['origin'])
+
+        batch_stats = statistics.Statistics(loss_total,num_non_padding,corr)
+
         return batch_stats
 
-    def _stats(self,loss,scores,target):
+    def _compute_corr(self, output, target):
         """
         Args:
             loss (:obj:`FloatTensor`): the loss computed by the loss criterion.
@@ -149,18 +172,22 @@ class LossComputeBase(nn.Module):
             :obj:`onmt.utils.Statistics` : statistics for this batch.
         """
         #this return two value. one for value and the other for position
-        pred = scores.max(1)[1]
+        pred = output.max(-1)[1]
         non_padding = target.ne(self.padding_idx)
         
-        #here count for the # that match the answer
-        num_correct = pred.eq(target) \
-                          .masked_select(non_padding) \
-                          .sum() \
-                          .item()
-
+        num_correct = 0
+		
+        #here we use set rathe than compare correct at same place
+        #iterate over the betch size
+        for i in range(output.shape[1]):
+            origin = set( np.array(target[i]))
+            ans = set( np.array( pred[:,i]))
+			
+            num_correct += len(origin & ans)
         num_non_padding = non_padding.sum().item()
 
-        return statistics.Statistics(loss.item(),num_non_padding,num_correct)
+        return num_non_padding,num_correct
+        #return statistics.Statistics(loss.item(),num_non_padding,num_correct)
 
     def _bottle(self,_v):
         return _v.view(-1,_v.shape[-1])
@@ -175,7 +202,7 @@ class LabelSmoothingLoss(nn.Module):
     and p_{prob. computed by model}(w) is minimized.
     """
     def __init__(self,label_smoothing,tgt_dict_size,padding_idx=-100):
-        assert(0.0 < label_smoothing <= 1.0)
+        assert(0.0 <= label_smoothing <= 1.0)
         self.padding_idx = padding_idx
         super(LabelSmoothingLoss,self).__init__()
 
@@ -190,27 +217,32 @@ class LabelSmoothingLoss(nn.Module):
 
         self.confidence = 1.0 - label_smoothing
 
-    def forward(self,output,target,shard_size,origin,part,now):
+    def forward(self,output,target,shard_size,batch,part,now):
         """
         output (FloatTensor): batch_size x n_classes
         target (LongTensor): batch_size
         """
         model_prob = self.one_hot.repeat(target.shape[0],1)
-        print(origin.shape , model_prob.shape[0],part,now)
+		#print("origin",batch['origin'].shape)
+		#print("target",batch['target'].shape)
 
         for i in range(model_prob.shape[0]):
-            now = now*shard_size+i//part
+            temp = now*shard_size+i//part
+            
             #for the last put eos
-            if( now == origin.shape[1] ):
-                break
+            if( temp >= batch['target_len'][i%part]-2 ):
+                continue
             #else put available ans
             else:  
-                model_prob[i][ origin[i%part][now:] ] = 1
+				#print( temp , batch['target_len'][i%part]-2 )
+                model_prob[i][ batch['origin'][i%part][temp:] ] = self.confidence
                 model_prob[i][0] = 0
                 
-                model_prob[i] /= ( origin.shape[1]-now )
+				#print("len",i,part ,batch['target_len'][i%part], -temp-2 )
+                
+                model_prob[i] /= ( batch['target_len'][i%part].float() -temp-2 )
         
-        #model_prob.scatter_(1,target.unsqueeze(1),self.confidence)
+        model_prob.scatter_(1,target.unsqueeze(1),self.confidence)
         model_prob.masked_fill_((target == self.padding_idx).unsqueeze(1),0)
 
         output = F.log_softmax(output,dim=-1)
@@ -225,7 +257,7 @@ class NMTLossCompute(LossComputeBase):
                     label_smoothing=0.0):
         super(NMTLossCompute,self).__init__(model,tgt_dict_size)
         
-        if(label_smoothing >0):
+        if(label_smoothing >=0):
             self.criterion = LabelSmoothingLoss(
                 label_smoothing,tgt_dict_size,padding_idx=self.padding_idx)
         else:
@@ -240,7 +272,7 @@ class NMTLossCompute(LossComputeBase):
             "target"  : target[ range_[0]+1 : range_[1] ]
         }
     
-    def _compute_loss(self,target,output,shard_size=32,origin=None,now=0):
+    def _compute_loss(self,target,output,shard_size=32,batch=None,now=0):
         #here i should deal with the dimension problem
 
         part = output.shape[1]
@@ -248,13 +280,16 @@ class NMTLossCompute(LossComputeBase):
         bottled_output = self._bottle(output)
         truth = target.view(-1)
         
-        if(origin is None):
-            loss = self.criterion(bottled_output,truth)
-        else:
-            loss = self.criterion(bottled_output,truth,shard_size,origin,part,now)
-        stats = self._stats(loss.clone(),bottled_output,truth)
+		#if(origin is None):
+		#loss = self.criterion(bottled_output,truth)
+		#else:
+        loss = self.criterion(bottled_output,truth,shard_size,batch,part,now)
+		#stats = self._stats(loss.clone(),bottled_output,truth)
 
-        return loss,stats
+        return loss
+    
+
+
 
 def filter_shard_state(state,shard_size=None):
     for k,v in state.items():
