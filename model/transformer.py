@@ -112,7 +112,6 @@ class Decoder(nn.Module):
             saved_inputs = []
 
         for i in range(self.num_layer):
-            #print("layer",i)
             prev_layer_input = None
 
             if(state.cache is None):
@@ -261,7 +260,6 @@ class Transformer(nn.Module):
     def forward(self,src,tar,length,dec_state=None):
         #leave last one for predict usually it is eos or padding
         tar = tar[:-1]
-
         enc_final,memory_bank,enc_attn = self.encoder(src,length)
         enc_state = self.decoder.init_decoder_state(src,memory_bank,enc_final)
 

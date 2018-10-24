@@ -45,26 +45,22 @@ class Embedding(nn.Module):
     def forward(self,x_val,pos=None):
         #logger.debug('x: {0}'.format(x_val))
         output = self.word_emb(x_val)
-	#logger.debug('x output: {0}'.format(output))
-
         output = output * math.sqrt(self.dim)
 
-        if(pos is None):
-            pos_out = self.pos_emb.weight[:output.shape[0]].unsqueeze(1)
-        else:#here the method is for sequential output
-            pos_out = self.pos_emb.weight[pos].unsqueeze(0).unsqueeze(0)
+        if(self.pos_emb is not None):
+            if(pos is None):
+                pos_out = self.pos_emb.weight[:output.shape[0]].unsqueeze(1)
+            else:#here the method is for sequential output
+                pos_out = self.pos_emb.weight[pos].unsqueeze(0).unsqueeze(0)
+            
+            if(self.dtype=='sum'):
+                output += pos_out
+            elif(self.dtype=='cat'):
+                output = torch.cat([output,pos_out.expand_as(output)],dim=-1)
+            
+            output = self.drop(output)
         
-	#logger.debug('position embedding {0},|,{1}'.format(output.shape,pos_out.shape))
-        if(self.dtype=='sum'):
-            #print("output",output.shape)
-            #print("pos_out",pos_out.shape)
-            output += pos_out
-        elif(self.dtype=='cat'):
-            output = torch.cat([output,pos_out.expand_as(output)],dim=-1)
         
-        output = self.drop(output)
-	#logger.debug('x output: {0}'.format(output))
-
         return output
 
 #follow up are the testing file

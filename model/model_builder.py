@@ -35,7 +35,7 @@ def build_encoder(opt,src_dict):
     model_dim,nin_dim,dropout,embedding):
     """
 
-    max_len = 128
+    max_len = 64
     src_embedding = build_embedding(opt,src_dict,max_len)
     return transformer.Encoder( opt.num_layer,opt.num_head,
                                 opt.model_dim,opt.nin_dim,
@@ -47,7 +47,7 @@ def build_decoder(opt,tar_dict):
     copy_attn,self_attn_type,dropout,embedding
     """
 
-    max_len = 128
+    max_len = 64
     tar_embedding = build_embedding(opt,tar_dict,max_len,for_encoder=False,dtype='none')
     return transformer.Decoder(
         opt.num_layer,opt.num_head,

@@ -67,7 +67,7 @@ def main(opt):
         data_token[ ttype ] = dict()
         with open('./data/subword.{0}'.format(ttype)) as f_in:
             for j,word in enumerate(f_in):
-                data_token[ttype][word.strip()[1:-1]] = j
+                data_token[ttype][word.strip()] = j
 
     logger.info("source size:{0}".format(len(data_token['source'])))
     logger.info("target size:{0}".format(len(data_token['target'])))
@@ -78,12 +78,12 @@ def main(opt):
         
     logger.info("start build training,validing data")
   
-    train_dataset = itemDataset(file_name='./data/playlist_20180826_train.csv',
+    train_dataset = itemDataset(file_name='./data/playlist_20181023_train.csv',
                         transform=transforms.Compose([ToTensor()]))
     trainloader = DataLoader(train_dataset, batch_size=opt.batch_size ,
                         shuffle=False, num_workers=32,collate_fn=collate_fn)
 
-    valid_dataset = itemDataset(file_name='./data/playlist_20180826_valid.csv',
+    valid_dataset = itemDataset(file_name='./data/playlist_20181023_valid.csv',
                         transform=transforms.Compose([ToTensor()]))
     validloader = DataLoader(valid_dataset, batch_size=opt.valid_batch_size,
                         shuffle=False, num_workers=32,collate_fn=collate_fn)

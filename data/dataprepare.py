@@ -4,34 +4,10 @@ import os
 import jieba,re,string
 from googletrans import  Translator
 translator = Translator()
-
-def jieba_setting():
-    jieba.set_dictionary('./jieba_dict/dict.txt.big')
-    jieba.load_userdict('./jieba_dict/20180419-artistname_zh_tw.txt')
-    jieba.load_userdict('./jieba_dict/20180419-albumname_zh_tw.txt')
-    jieba.load_userdict('./jieba_dict/20180419-songname_zh_tw.txt')
-    jieba.load_userdict('./jieba_dict/20180425-en-dict.txt')
-
-    with open('./jieba_dict/editor_playlists-20161020-dict.txt', 'r', encoding='utf-8') as f:
-        for _ in f:
-            jieba.add_word( _.split(',')[0])
-            
-    stopword_set = set()
-    with open('./jieba_dict/stopwords.txt','r', encoding='utf-8') as stopwords:
-        for stopword in stopwords:
-            stopword_set.add(stopword.strip('\n'))
-    with open('./jieba_dict/stopwords2.txt','r', encoding='utf-8') as stopwords:
-        for stopword in stopwords:
-            stopword_set.add(stopword.strip('\n'))
-    with open('./jieba_dict/stopwords_internet.txt','r', encoding='utf-8') as stopwords:
-        for stopword in stopwords:
-            stopword_set.add(stopword.strip('\n'))
-    return stopword_set    
-
 def sen_pre_processing(sen):
     sen = str(sen).lower()
-    sen = re.sub(r'[\u3000-\u303F]', ' ', sen)
-    sen = re.sub(r'[\uFF00-\uFFEF]', ' ', sen)
+    #sen = re.sub(r'[\u3000-\u303F]', ' ', sen)
+    #sen = re.sub(r'[\uFF00-\uFFEF]', ' ', sen)
 
     emoji = '💕' + '🤘' + '👯' + '🏋️' + '🚗🚗' + '💪' + '🎄' + '🔁' + '👋' + '💪💪' + '🔥' + \
           '😝👶🏻☀️🍹' + '🔁' + '✨👯' + '🌞' + '💖' + '🎉✨' + '🔁' + '🌸' + '❤️💛💚💙💜' + \
@@ -42,12 +18,11 @@ def sen_pre_processing(sen):
           '🔁' + '🏆' + '🏆' + '🔁' + '🎉' + '🎉' + '🏃👟' + '🍖🍷🍾' + '❤️' + '🔁' + '😢' + \
           '👋🏼' + '👂' + '🗽' + '🇵🇷' + '🎸' + '🔁' + '🌧' + '🔁' + '🍿🍿' + '❤️' + '😈' + \
           '😈' + '🇭🇰' + '🌞' + '🌞' + '😜' + '' + '' + '' + '' + ''
-    for c in string.punctuation + emoji+'”“':
+    for c in emoji:
         sen = sen.replace(c, ' ')
 
     return sen
 
-#stopword_set = jieba_setting()
 
 tag = dict()
 with open('./20180419_mike_tags_mapping.csv') as f:
@@ -69,8 +44,8 @@ for i in range(raw_data.shape[0]):
 
     if len(title) >= 0:
         output = dict()
-        print(title)
         title  = sen_pre_processing(title)
+        """
         translator = Translator()
         try:
             output['zh-tw'] = translator.translate(title, dest='zh-tw',src='en').text
@@ -79,15 +54,15 @@ for i in range(raw_data.shape[0]):
             translator = Translator()
             output['zh-tw'] = translator.translate(title, dest='zh-tw',src='en').text
             output['en'] = translator.translate(title, dest='en',src='zh-tw').text
-            
+        """
         try:
             if(isinstance(data[p_id],dict)):
                 print('repeat',p_id)
         except KeyError:
             pass
-        
         data[p_id] = dict()
-        data[p_id]['title'] = [output['zh-tw'],output['en']]
+        #data[p_id]['title'] = [output['zh-tw'],output['en']]
+        data[p_id]['title'] = title
         data[p_id]['song'] = song
         data[p_id]['language'] = []
         data[p_id]['year'] = []
@@ -112,9 +87,10 @@ for i in range(raw_data.shape[0]):
         if i % 100 == 0:
             print('{0}'.format(i))
 
-with open('playlist_20180826_parse.csv','w') as f:
-    f.write('"id","title_en","title_zh","song","language","year","acoustic","genre","context","o"\n')
+with open('playlist_20181023_parse_1.csv','w') as f:
+    f.write('"id","source","target","language","year","acoustic","genre","context","o"\n')
     for i in data:
+        """
         txt = '"{0}","{1}","{2}","{3}","{4}","{5}","{6}","{7}","{8}"\n'.format(
                 str(i),
                 data[i]['title'][1],
@@ -127,10 +103,10 @@ with open('playlist_20180826_parse.csv','w') as f:
                 ','.join([ str(_) for _ in data[i]['o']])
             )
         f.write(txt)
-
+        """
         txt = '"{0}","{1}","{2}","{3}","{4}","{5}","{6}","{7}","{8}"\n'.format(
                 str(i),
-                data[i]['title'][0],
+                data[i]['title'],
                 ','.join([ str(_) for _ in data[i]['song']]),
                 ','.join([ str(_) for _ in data[i]['language']]),
                 ','.join([ str(_) for _ in data[i]['year']]),
