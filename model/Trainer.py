@@ -101,7 +101,7 @@ class Trainer(object):
     
         self.model.train()
     
-    def train(self, train_loader, valid_loader, train_steps, valid_steps):
+    def train(self, train_loader, valid_loader, train_steps, valid_steps,relace):
         """
         The main training loops.
         by iterating over training data (i.e. `train_iter_fct`)
@@ -169,7 +169,7 @@ class Trainer(object):
                                                 (normalization))
 
                         self._gradient_accumulation(
-                            true_batchs,normalization,total_stats,report_stats
+                            true_batchs,normalization,total_stats,report_stats,relace
                         )
 
                         report_stats = self._maybe_report_training(
@@ -186,7 +186,7 @@ class Trainer(object):
                                 logger.info('GpuRank {0}: validate step {1}'.format(
                                     self.gpu_rank,step))
                             #dataloader
-                            valid_stats = self.validate(valid_loader)
+                            valid_stats = self.validate(valid_loader,relace)
                             
                             if(self.gpu_verbose_level > 0):
                                 logger.info('GpuRank {0}: gather valid stat\
@@ -212,7 +212,7 @@ class Trainer(object):
         valid_stats = self.validate(valid_loader)
         return total_stats
 
-    def validate(self,valid_loader):
+    def validate(self,valid_loader,replace):
         """
             use the valid set to check if the model works correct.
         """
@@ -225,7 +225,7 @@ class Trainer(object):
                 batch = to_cuda(batch)
 
             output, attn, _ = self.model(
-                batch['source'],batch['target'],batch['source_len']
+                batch['source'],batch['target'],batch['source_len'],replace=replace
                 )
             
             batch_stat = self.valid_loss.monolithic_compute_loss(
@@ -243,7 +243,7 @@ class Trainer(object):
         return stats
     
     def _gradient_accumulation(self,true_batchs,normalization,total_stats,
-                                report_stats):
+                                report_stats,replace):
         """
             accumulate the input and perform bp for each input
         """
@@ -267,7 +267,7 @@ class Trainer(object):
                 if(self.grad_accum_count == 1):
                     self.model.zero_grad()
                 output, attn, dec_state = self.model(
-                    batch['source'],target,batch['source_len'],dec_state
+                    batch['source'],target,batch['source_len'],dec_state,replace
                 )
 
                 batch_stat = self.train_loss.sharded_compute_loss(

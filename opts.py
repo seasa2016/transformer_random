@@ -25,7 +25,7 @@ def model_opts(parser):
                        choices=['concat', 'sum', 'mlp'],
                        help="""Merge action for incorporating features embeddings.
                        Options [concat|sum|mlp].""")
-    group.add_argument('-feat_vec_size', type=int, default=50,
+    group.add_argument('-feat_vec_size', type=int, default=128,
                        help="""If specified, feature embedding sizes
                        will be set to this. Otherwise, feat_vec_exponent
                        will be used.""")
@@ -42,6 +42,8 @@ def model_opts(parser):
                        help="""Type of decoder layer to use. Non-RNN layers
                        are experimental. Options are
                        [rnn|transformer|cnn].""")
+    group.add_argument('-replace', action='store_true',
+                       help="""whether to pass a layer to reduce the dim""")
 
     group.add_argument('-num_layer', type=int, default=3,
                        help='Number of layers in the encoder')
@@ -116,7 +118,7 @@ def train_opts(parser):
                        help="""Init parameters with xavier_uniform.
                        Required for transfomer.""")
 
-    group.add_argument('-train_from', default='', type=str,
+    group.add_argument('-train_from', default=None, type=str,
                        help="""If training from a checkpoint then this is the
                        path to the pretrained model's state_dict.""")
 
@@ -254,7 +256,7 @@ def translation_opts(parser):
                        help='model for decode.')
 
     group = parser.add_argument_group('Data')
-    group.add_argument('-data_type', default="text",
+    group.add_argument('-data', require=True,
                        help="Type of the source input. Options: [text|img].")
 
     group.add_argument('-src', required=True,

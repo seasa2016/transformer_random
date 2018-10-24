@@ -257,11 +257,14 @@ class Transformer(nn.Module):
         self.encoder = encoder
         self.decoder = decoder
         
-    def forward(self,src,tar,length,dec_state=None):
+    def forward(self,src,tar,length,dec_state=None,replace=False):
         #leave last one for predict usually it is eos or padding
         tar = tar[:-1]
         enc_final,memory_bank,enc_attn = self.encoder(src,length)
         enc_state = self.decoder.init_decoder_state(src,memory_bank,enc_final)
+
+        if(replace):
+            memory_bank = self.temp(memory_bank)
 
         decoder_outputs,dec_state,attns = self.decoder(
             tar,memory_bank,

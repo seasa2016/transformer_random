@@ -139,9 +139,13 @@ class Optimizer(object):
 
         self.params = []
         
+        logger.info('*'*10)
         for name,p in params:
+            logger.info('things will be optim')
             if p.requires_grad:
+                logger.info('{0}'.format(name))
                 self.params.append(p)
+        logger.info('*'*10)
 
         if(self.optim_method.lower() == 'sgd'):
             self.optimizer = Optim.SGD(self.params,lr=self.learning_rate)

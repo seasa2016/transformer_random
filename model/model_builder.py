@@ -37,7 +37,7 @@ def build_encoder(opt,src_dict):
 
     max_len = 64
     src_embedding = build_embedding(opt,src_dict,max_len)
-    return transformer.Encoder( opt.num_layer,opt.num_head,
+    return transformer.Encoder( opt.enc_layer,opt.num_head,
                                 opt.model_dim,opt.nin_dim,
                                 opt.dropout,src_embedding)
 
@@ -50,7 +50,7 @@ def build_decoder(opt,tar_dict):
     max_len = 64
     tar_embedding = build_embedding(opt,tar_dict,max_len,for_encoder=False,dtype='none')
     return transformer.Decoder(
-        opt.num_layer,opt.num_head,
+        opt.dec_layer,opt.num_head,
         opt.model_dim,opt.nin_dim,len(tar_dict),max_len,
         opt.copy_attn,opt.self_attn_type,opt.dropout,tar_embedding
     )
@@ -79,7 +79,7 @@ def load_test_model(opt,model_path=None):
     
     return model, opt
 
-def build_base_model(model_opt,data_token,gpu,checkpoint=None):
+def build_base_model(model_opt,opt,data_token,gpu,checkpoint=None):
 
     #in our work,we only use text
     
@@ -117,6 +117,58 @@ def build_base_model(model_opt,data_token,gpu,checkpoint=None):
     model.to(device)
     logger.info('the model is now in the {0} mode'.format(device))
     return model
+
+def change(model_opt,opt,model,data_new):
+    """
+    change the decoder and lock the grad for the encoder
+    """
+    model.decoder = build_decoder(opt,data_new['target'])
+
+    #lock the grad for the encoder
+    for i in model.encoder.parameters():
+        i.requires_grad = False 
+    
+    if(opt.replace):
+        #one for the pretrain model and the other for the new model
+        logger.info("with mid layer {0} {1}".format(model_opt.model_dim,opt.model_dim))
+        model.mid = nn.Linear(model_opt.model_dim,opt.model_dim)
+    return model
+
+
+def build_model_pre(model_opt,opt,data_ori,data_new,gpu,checkpoint=None):
+    #in our work,we only use text
+    #build encoder
+    encoder = build_encoder(model_opt,data_ori['source'])
+    logger.info("build the origin encoder")
+    decoder = build_decoder(model_opt,data_ori['target'])
+    logger.info("build the origin decoder")
+
+    device = torch.device("cuda" if gpu else "cpu")
+    model = transformer.Transformer(encoder,decoder)
+    
+    if(checkpoint is not None):
+        logger.info('loading model weight from checkpoint')
+        model.load_state_dict(checkpoint['model'])
+    else:
+        raise ValueError('cant access this mode without using pretrain model')
+    
+    model = change(model_opt,opt,model,data_new)
+
+    #print(model)
+    n_params = sum([p.nelement() for p in model.parameters()])
+    enc = 0
+    dec = 0
+    for name, param in model.named_parameters():
+        if 'encoder' in name:
+            enc += param.nelement()
+        elif 'decoder' or 'generator' in name:
+            dec += param.nelement()
+    print("the size will be {0} {1} {2}".format(n_params,enc,dec))
+    
+    model.to(device)
+    logger.info('the model is now in the {0} mode'.format(device))
+    return model
+
 
 def build_model(opt,data_token,checkpoint):
     logger.info('Building model...')
