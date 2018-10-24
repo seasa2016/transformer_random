@@ -45,20 +45,22 @@ class Embedding(nn.Module):
     def forward(self,x_val,pos=None):
         #logger.debug('x: {0}'.format(x_val))
         output = self.word_emb(x_val)
+        print("shape1",output.shape)
         output = output * math.sqrt(self.dim)
 
         if(self.pos_emb is not None):
+            print("shape2",output.shape)
             if(pos is None):
                 pos_out = self.pos_emb.weight[:output.shape[0]].unsqueeze(1)
             else:#here the method is for sequential output
                 pos_out = self.pos_emb.weight[pos].unsqueeze(0).unsqueeze(0)
-            
+            print("shape3",output.shape)
             if(self.dtype=='sum'):
                 output += pos_out
             elif(self.dtype=='cat'):
                 output = torch.cat([output,pos_out.expand_as(output)],dim=-1)
-            
-            output = self.drop(output)
+            print("shape4",output.shape)
+        output = self.drop(output)
         
         
         return output

@@ -5,7 +5,7 @@ from torch.nn.utils import clip_grad_norm_
 from .Logger import logger 
 import math
 
-def build_optim(model,opt,checkpoint=None):
+def build_optim(model,opt,checkpoint=None,ttype=None):
     """"
     Build optimizer
     """
@@ -40,7 +40,35 @@ def build_optim(model,opt,checkpoint=None):
     # Importantly, this method does not yet load the optimizer state, as
     # essentially it builds a new optimizer with empty optimizer state and
     # parameters from the model.
-    optim.set_optim_type(model.named_parameters())
+    if(ttype == 'pretrain'):
+        params = []    
+        logger.info('*'*10)
+        logger.info('things will be optim')
+        
+        if(opt.replace):
+            for name,p in model.mid.parameters():
+                if p.requires_grad:
+                    logger.info('{0}'.format(name))
+                    params.append(p)
+
+        for name,p in model.decoder.parameters():
+            if p.requires_grad:
+                logger.info('{0}'.format(name))
+                params.append(p)
+        logger.info('part of the embedding')
+        params.append(model.encoder.embedding.word_emb.weight[2:11])
+        logger.info('*'*10)
+    else:
+        params = []    
+        logger.info('*'*10)
+        logger.info('things will be optim')
+        for name,p in params:
+            if p.requires_grad:
+                logger.info('{0}'.format(name))
+                params.append(p)
+        logger.info('*'*10)
+
+    optim.set_optim_type(params,ttype)
 
     if(checkpoint):
         # Stage 2: In this stage, which is only performed when loading an
@@ -132,20 +160,12 @@ class Optimizer(object):
         #this should be model_dim
         self.model_size = model_size
         
-    def set_optim_type(self,params):
+    def set_optim_type(self,params,ttype=None):
         """
         set up the optimizer type and the correspond coefficient
         """
 
-        self.params = []
-        
-        logger.info('*'*10)
-        for name,p in params:
-            logger.info('things will be optim')
-            if p.requires_grad:
-                logger.info('{0}'.format(name))
-                self.params.append(p)
-        logger.info('*'*10)
+        self.params = params
 
         if(self.optim_method.lower() == 'sgd'):
             self.optimizer = Optim.SGD(self.params,lr=self.learning_rate)

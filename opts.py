@@ -141,7 +141,7 @@ def train_opts(parser):
 
     # Optimization options
     group = parser.add_argument_group('Optimization- Type')
-    group.add_argument('-batch_size', type=int, default=64,
+    group.add_argument('-batch_size', type=int, default=2,
                        help='Maximum batch size for training')
     group.add_argument('-batch_type', default='tokens',
                        choices=["sents", "tokens"],

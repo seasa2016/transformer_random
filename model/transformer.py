@@ -264,7 +264,7 @@ class Transformer(nn.Module):
         enc_state = self.decoder.init_decoder_state(src,memory_bank,enc_final)
 
         if(replace):
-            memory_bank = self.temp(memory_bank)
+            memory_bank = self.mid(memory_bank)
 
         decoder_outputs,dec_state,attns = self.decoder(
             tar,memory_bank,

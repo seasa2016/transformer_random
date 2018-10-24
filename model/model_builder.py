@@ -35,20 +35,20 @@ def build_encoder(opt,src_dict):
     model_dim,nin_dim,dropout,embedding):
     """
 
-    max_len = 64
+    max_len = 128
     src_embedding = build_embedding(opt,src_dict,max_len)
     return transformer.Encoder( opt.enc_layer,opt.num_head,
                                 opt.model_dim,opt.nin_dim,
                                 opt.dropout,src_embedding)
 
-def build_decoder(opt,tar_dict):
+def build_decoder(opt,tar_dict,dtype='sum'):
     """
     num_layer,model_dim,num_head,nin_dim,
     copy_attn,self_attn_type,dropout,embedding
     """
 
-    max_len = 64
-    tar_embedding = build_embedding(opt,tar_dict,max_len,for_encoder=False,dtype='none')
+    max_len = 128
+    tar_embedding = build_embedding(opt,tar_dict,max_len,for_encoder=False,dtype=dtype)
     return transformer.Decoder(
         opt.dec_layer,opt.num_head,
         opt.model_dim,opt.nin_dim,len(tar_dict),max_len,
@@ -122,12 +122,14 @@ def change(model_opt,opt,model,data_new):
     """
     change the decoder and lock the grad for the encoder
     """
-    model.decoder = build_decoder(opt,data_new['target'])
+    model.decoder = build_decoder(opt,data_new['target'],dtype='none')
 
     #lock the grad for the encoder
     for i in model.encoder.parameters():
         i.requires_grad = False 
-    
+    model.encoder.embedding.word_emb.requires_grad = True
+
+
     if(opt.replace):
         #one for the pretrain model and the other for the new model
         logger.info("with mid layer {0} {1}".format(model_opt.model_dim,opt.model_dim))
@@ -138,6 +140,7 @@ def change(model_opt,opt,model,data_new):
 def build_model_pre(model_opt,opt,data_ori,data_new,gpu,checkpoint=None):
     #in our work,we only use text
     #build encoder
+    logger.info("origin dim {0} {1}".format(model_opt.model_dim,model_opt.nin_dim))
     encoder = build_encoder(model_opt,data_ori['source'])
     logger.info("build the origin encoder")
     decoder = build_decoder(model_opt,data_ori['target'])
@@ -145,8 +148,8 @@ def build_model_pre(model_opt,opt,data_ori,data_new,gpu,checkpoint=None):
 
     device = torch.device("cuda" if gpu else "cpu")
     model = transformer.Transformer(encoder,decoder)
-    
-    if(checkpoint is not None):
+    print(model)
+    if(checkpoint):
         logger.info('loading model weight from checkpoint')
         model.load_state_dict(checkpoint['model'])
     else:

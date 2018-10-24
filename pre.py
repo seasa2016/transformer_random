@@ -46,13 +46,14 @@ def main(opt):
     opt = training_opt_postprocessing(opt)
     init_logger(opt)
 
-    if(opt.train_from):
+    if(opt.train_from is not None):
         logger.info('loading checkpoint from {0}'.format(opt.train_from))
         device = torch.device('cpu')
         checkpoint = torch.load(opt.train_from,map_location=device)
         
         model_opt = checkpoint['opt']
     else:
+        raise ValueError("you should choose a model to load from in this mode`")
         checkpoint = None
         model_opt = opt
     
@@ -61,26 +62,29 @@ def main(opt):
      
     #build model
     #send the token file into the model set up function
-    data_new = dict()
-    for ttype in ['source','target']:
-        data_new[ ttype ] = dict()
-        with open('./{0}/subword.{1}'.format(opt.data,ttype)) as f_in:
-            for j,word in enumerate(f_in):
-                data_new[ttype][word.strip()] = j
-    logger.info("source size:{0}".format(len(data_new['source'])))
-    logger.info("target size:{0}".format(len(data_new['target'])))
-
     data_ori = dict()
     for ttype in ['source','target']:
         data_ori[ ttype ] = dict()
         with open('./ch_en/subword.{0}'.format(ttype)) as f_in:
             for j,word in enumerate(f_in):
-                data_ori[ttype][word.strip()] = j
+                data_ori[ttype][word.strip()[1:-1]] = j
     logger.info("source size:{0}".format(len(data_ori['source'])))
     logger.info("target size:{0}".format(len(data_ori['target'])))
 
+    data_new = dict()
+    for ttype in ['source','target']:
+        data_new[ ttype ] = dict()
+        with open('./pretrain/subword.{0}'.format(ttype)) as f_in:
+            for j,word in enumerate(f_in):
+                if(ttype == 'source'):
+                    data_new[ttype][word.strip()[1:-1]] = j
+                else:
+                    data_new[ttype][word.strip()+'_'] = j
+    logger.info("source size:{0}".format(len(data_new['source'])))
+    logger.info("target size:{0}".format(len(data_new['target'])))
+
     logger.info("start build model")
-    model = build_model_pre(model_opt,opt,data_ori,data_new,checkpoint)
+    model = build_model_pre(model_opt,opt,data_ori,data_new,gpu=torch.cuda.is_available(),checkpoint=checkpoint)
     logger.info(model)
         
     logger.info("start build training,validing data")
@@ -99,7 +103,7 @@ def main(opt):
 
 
     logger.info("start build optimizer")
-    optim = build_optim(model,opt,None)
+    optim = build_optim(model,opt,None,ttype = 'pretrain')
 
     #logger.info("model:{0}".format(model))
 
