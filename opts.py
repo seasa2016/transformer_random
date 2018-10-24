@@ -3,9 +3,9 @@ import argparse
 
 def model_opts(parser):
     group = parser.add_argument_group('model_embedding')
-    group.add_argument('-src_word_vec_size', type=int, default=64,
+    group.add_argument('-src_word_vec_size', type=int, default=128,
                        help='Word embedding size for src.')
-    group.add_argument('-tar_word_vec_size', type=int, default=64,
+    group.add_argument('-tar_word_vec_size', type=int, default=128,
                        help='Word embedding size for tgt.')
 
     group.add_argument('-share_decoder_embeddings', action='store_true',
@@ -49,9 +49,9 @@ def model_opts(parser):
                        help='Number of layers in the encoder')
     group.add_argument('-dec_layer', type=int, default=3,
                        help='Number of layers in the decoder')
-    group.add_argument('-model_dim', type=int, default=64,
+    group.add_argument('-model_dim', type=int, default=128,
                        help='Size of rnn hidden states')
-    group.add_argument('-nin_dim', type=int, default=128,
+    group.add_argument('-nin_dim', type=int, default=256,
                        help='Size of hidden transformer feed-forward')
     
 
