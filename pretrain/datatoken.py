@@ -68,10 +68,11 @@ def tokenlize(file_name):
             for i,word in enumerate(f_in):
                 if(t == 'source'):
                     word = word.strip()[1:-1]
-                    token[t][word] = str(i)
+                    token[t][word] = str(len(token[t]))
+                 
                 else:
                     word = word.strip()
-                    token[t][word] = str(i)
+                    token[t][word] = str(len(token[t]))
 
     def convert(line):
         out = []

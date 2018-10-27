@@ -46,12 +46,12 @@ def build_optim(model,opt,checkpoint=None,ttype=None):
         logger.info('things will be optim')
         
         if(opt.replace):
-            for name,p in model.mid.parameters():
+            for name,p in model.mid.named_parameters():
                 if p.requires_grad:
                     logger.info('{0}'.format(name))
                     params.append(p)
 
-        for name,p in model.decoder.parameters():
+        for name,p in model.decoder.named_parameters():
             if p.requires_grad:
                 logger.info('{0}'.format(name))
                 params.append(p)
@@ -62,7 +62,7 @@ def build_optim(model,opt,checkpoint=None,ttype=None):
         params = []    
         logger.info('*'*10)
         logger.info('things will be optim')
-        for name,p in params:
+        for name,p in model.named_parameters():
             if p.requires_grad:
                 logger.info('{0}'.format(name))
                 params.append(p)

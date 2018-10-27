@@ -44,7 +44,7 @@ def build_translator(opt,report_score=True,logger=None,out_file=None):
     opts.model_opts(dummy_parser)
 
     #we wont use ensemble here XD
-    model, model_opt = load_test_model(opt)
+    model, model_opt = load_test_model(opt,mode=True)
     
     scorer = Beam.GNMTGlobalScorer( opt.alpha,
                                     opt.beta,
@@ -139,10 +139,10 @@ class Translator(object):
         self.vocab = {}
         #set up the vocab for decode
         self.vocab['target'] = {}
-        with open('./data/subword.target') as f:
+        with open('./pretrain/subword.target') as f:
             for i,word in enumerate(f):
                 word = word.strip()
-                self.vocab['target'][ word[1:-1] ] = i
+                self.vocab['target'][ word ] = i
 
         # for debugging
         self.beam_trace = self.dump_beam != ""

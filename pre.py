@@ -111,7 +111,7 @@ def main(opt):
     _check_save_model_path(opt)
 
     logger.info("start build reporter")
-    report_manager = Report_manager.build_report_manager(opt,checkpoint=checkpoint)
+    report_manager = Report_manager.build_report_manager(opt)
 
     logger.info("start build save")
     model_saver = build_model_saver(model_opt,opt,model,optim,report_manager)

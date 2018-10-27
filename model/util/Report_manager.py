@@ -12,7 +12,7 @@ def build_report_manager(opt,checkpoint=None):
         tensorboard_log_dir = opt.save_model
 
         progress_step = 0
-        if(opt.train_from):
+        if(checkpoint):
             tensorboard_log_dir = checkpoint['reporter']['loc']
             progress_step = checkpoint['reporter']['progress_step']
             start_time = checkpoint['reporter']['start_time']

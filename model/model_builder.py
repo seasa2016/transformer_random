@@ -38,7 +38,7 @@ def build_encoder(opt,src_dict):
     max_len = 128
     src_embedding = build_embedding(opt,src_dict,max_len)
     return transformer.Encoder( opt.enc_layer,opt.num_head,
-                                opt.model_dim,opt.nin_dim,
+                                opt.model_dim,opt.nin_dim_en,
                                 opt.dropout,src_embedding)
 
 def build_decoder(opt,tar_dict,dtype='sum'):
@@ -51,11 +51,11 @@ def build_decoder(opt,tar_dict,dtype='sum'):
     tar_embedding = build_embedding(opt,tar_dict,max_len,for_encoder=False,dtype=dtype)
     return transformer.Decoder(
         opt.dec_layer,opt.num_head,
-        opt.model_dim,opt.nin_dim,len(tar_dict),max_len,
+        opt.model_dim,opt.nin_dim_de,len(tar_dict),max_len,
         opt.copy_attn,opt.self_attn_type,opt.dropout,tar_embedding
     )
 
-def load_test_model(opt,model_path=None):
+def load_test_model(opt,model_path=None,mode=False):
     """
     use the method the acquire the data_dict and the model
     """
@@ -66,15 +66,29 @@ def load_test_model(opt,model_path=None):
     
     checkpoint = torch.load(model_path)
 
-    data_token = dict()
+    data_ori = dict()
     for t in ['source','target']:
-        data_token[t] = dict()
-
-        with open('./data/subword.{0}'.format(t)) as f_in:
+        data_ori[t] = dict()
+        with open('./ch_en/subword.{0}'.format(t)) as f_in:
             for i,word in enumerate(f_in):
-                data_token[t][word.strip()[1:-1]] = i
+                data_ori[t][word.strip()[1:-1]] = i
 
-    model = build_base_model(opt, data_token, torch.cuda.is_available(),checkpoint)
+    data_new = dict()
+    for t in ['source','target']:
+        data_new[t] = dict()
+        with open('./pretrain/subword.{0}'.format(t)) as f_in:
+            for i,word in enumerate(f_in):
+                if(t=='source'):
+                    data_new[t][word.strip()[1:-1]] = i
+                else:
+                    data_new[t][word.strip()] = i
+	
+    if(mode == False):
+        model = build_base_model(checkpoint['opt'],opt, data_new, torch.cuda.is_available(),checkpoint)
+    else:
+		#build_model_pre(opt,opt,data_ori,data_new,True,checkpoint=checkpoint)
+        model = build_base_model(opt,opt,data_new,True,checkpoint=checkpoint)
+        model.load_state_dict(checkpoint['model'])
     model.eval()
     
     return model, opt
@@ -86,7 +100,7 @@ def build_base_model(model_opt,opt,data_token,gpu,checkpoint=None):
     #build encoder
     encoder = build_encoder(model_opt,data_token['source'])
     logger.info("finish build encoder")
-    decoder = build_decoder(model_opt,data_token['target'])
+    decoder = build_decoder(model_opt,data_token['target'],dtype=None)
     logger.info("finish build decoder")
 
     device = torch.device("cuda" if gpu else "cpu")
@@ -140,7 +154,7 @@ def change(model_opt,opt,model,data_new):
 def build_model_pre(model_opt,opt,data_ori,data_new,gpu,checkpoint=None):
     #in our work,we only use text
     #build encoder
-    logger.info("origin dim {0} {1}".format(model_opt.model_dim,model_opt.nin_dim))
+    logger.info("origin dim {0} {1} {2}".format(model_opt.model_dim,model_opt.nin_dim_en,model_opt.nin_dim_de))
     encoder = build_encoder(model_opt,data_ori['source'])
     logger.info("build the origin encoder")
     decoder = build_decoder(model_opt,data_ori['target'])

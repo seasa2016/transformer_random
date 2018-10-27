@@ -33,11 +33,14 @@ class TranslationBuilder(object):
         self.vocab = {}
         for t in ['source','target']:
             self.vocab[t] = []
-            with open('./data/subword.{0}'.format(t)) as f:
+            with open('./pretrain/subword.{0}'.format(t)) as f:
                 for word in f:
-                    word = word.strip()[1:-1].replace('_',' ')
-                    word = word.replace('\\u',' ')
-
+                    if(t=='source'):
+                        word = word.strip()[1:-1].replace('_',' ')
+                        word = word.replace('\\u','_')
+                    else:
+                        word = word.strip()
+                    
                     self.vocab[t].append(word)
 
     def _build_sentence(self,pred,ttype=None):
@@ -55,12 +58,18 @@ class TranslationBuilder(object):
                 temp.append(vocab[_])
             except KeyError as e:
                 raise KeyError('the word {0} is unsee '.format(e.args[0]))
-
-        target = ''+temp[0]
-        for i in range(1,len(temp)):
-            if((temp[i-1][0] in ALPHANUMERIC_CHAR_SET ) != (temp[i][0] in ALPHANUMERIC_CHAR_SET )):
-                target = target[:-1]    
-            target += temp[i]
+        print(temp)
+        if(ttype=='source'):
+            target = ''+temp[0]
+            for i in range(1,len(temp)):
+                try:
+                    if((temp[i-1][0] in ALPHANUMERIC_CHAR_SET ) != (temp[i][0] in ALPHANUMERIC_CHAR_SET )):
+                        target = target[:-1]    
+                    target += temp[i]
+                except IndexError:
+                    raise ValueError("why error with no word")
+        else:
+            target = ' '.join(temp)
 
         return target
 

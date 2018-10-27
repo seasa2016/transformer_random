@@ -137,16 +137,13 @@ class beam(object):
                             #last n tokens, n = block_ngram_repeat
                             gram = ( gram + [hyp[i].item()] )[-self.block_ngram_repeat:]
 
-                            print(gram)
                             if(set(gram)&self.exclusion_tokens):
                                 continue
 
                             if(gram[:self.block_ngram_repeat-1] == check):
-                                print("pos",le)
                                 beam_scores[j, gram[-1] ] = -1e20
         else:
             beam_scores = word_probs[0]
-        print('*'*10)
         flat_beam_scores = beam_scores.view(-1)
         best_scores,best_scores_id = flat_beam_scores.topk(self.size,0,True,True)
         #print("beat",best_scores,best_scores_id)

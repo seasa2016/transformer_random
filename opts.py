@@ -3,9 +3,9 @@ import argparse
 
 def model_opts(parser):
     group = parser.add_argument_group('model_embedding')
-    group.add_argument('-src_word_vec_size', type=int, default=128,
+    group.add_argument('-src_word_vec_size', type=int, default=256,
                        help='Word embedding size for src.')
-    group.add_argument('-tar_word_vec_size', type=int, default=128,
+    group.add_argument('-tar_word_vec_size', type=int, default=256,
                        help='Word embedding size for tgt.')
 
     group.add_argument('-share_decoder_embeddings', action='store_true',
@@ -25,7 +25,7 @@ def model_opts(parser):
                        choices=['concat', 'sum', 'mlp'],
                        help="""Merge action for incorporating features embeddings.
                        Options [concat|sum|mlp].""")
-    group.add_argument('-feat_vec_size', type=int, default=128,
+    group.add_argument('-feat_vec_size', type=int, default=256,
                        help="""If specified, feature embedding sizes
                        will be set to this. Otherwise, feat_vec_exponent
                        will be used.""")
@@ -47,13 +47,15 @@ def model_opts(parser):
 
     group.add_argument('-num_layer', type=int, default=3,
                        help='Number of layers in the encoder')
-    group.add_argument('-enc_layer', type=int, default=3,
+    group.add_argument('-enc_layer', type=int, default=6,
                        help='Number of layers in the encoder')
     group.add_argument('-dec_layer', type=int, default=3,
                        help='Number of layers in the decoder')
-    group.add_argument('-model_dim', type=int, default=128,
+    group.add_argument('-model_dim', type=int, default=256,
                        help='Size of rnn hidden states')
-    group.add_argument('-nin_dim', type=int, default=256,
+    group.add_argument('-nin_dim_en', type=int, default=1024,
+                       help='Size of hidden transformer feed-forward')
+    group.add_argument('-nin_dim_de', type=int, default=512,
                        help='Size of hidden transformer feed-forward')
     
 
@@ -141,7 +143,7 @@ def train_opts(parser):
 
     # Optimization options
     group = parser.add_argument_group('Optimization- Type')
-    group.add_argument('-batch_size', type=int, default=2,
+    group.add_argument('-batch_size', type=int, default=32,
                        help='Maximum batch size for training')
     group.add_argument('-batch_type', default='tokens',
                        choices=["sents", "tokens"],
@@ -254,10 +256,10 @@ def translation_opts(parser):
 
     group.add_argument('-model',type=str, default='transformer',
                        help='model for decode.')
+    group.add_argument('-pre', action='store_true',
+                       help="""use pretrain model""")
 
     group = parser.add_argument_group('Data')
-    group.add_argument('-data', require=True,
-                       help="Type of the source input. Options: [text|img].")
 
     group.add_argument('-src', required=True,
                        help="""Source sequence to decode (one line per
