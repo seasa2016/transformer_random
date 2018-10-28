@@ -63,8 +63,7 @@ def build_translator(opt,report_score=True,logger=None,out_file=None):
 
     translator = Translator(model,global_scorer=scorer,
                             out_file=out_file, report_score=report_score,
-                            copy_attn=model_opt.copy_attn, logger=logger,
-                            **kwargs)
+                            logger=logger,**kwargs)
 
     return translator
 
@@ -141,7 +140,7 @@ class Translator(object):
         self.vocab['target'] = {}
         with open('./pretrain/subword.target') as f:
             for i,word in enumerate(f):
-                word = word.strip()
+                word = word.strip()+'_'
                 self.vocab['target'][ word ] = i
 
         # for debugging

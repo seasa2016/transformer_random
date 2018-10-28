@@ -55,10 +55,8 @@ def build_optim(model,opt,checkpoint=None,ttype=None):
             if p.requires_grad:
                 logger.info('{0}'.format(name))
                 params.append(p)
-        
         for name,p in model.encoder.named_parameters():
             if p.requires_grad:
-				#if('embedding' not in name.lower()):
                 logger.info('{0}'.format(name))
                 params.append(p)
 

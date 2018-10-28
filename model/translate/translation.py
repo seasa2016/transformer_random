@@ -36,7 +36,7 @@ class TranslationBuilder(object):
             with open('./pretrain/subword.{0}'.format(t)) as f:
                 for word in f:
                     if(t=='target'):
-                        word = word.strip()
+                        word = word.strip()+'_'
                     else:
                         word = word.strip()[1:-1].replace('_',' ')
                         word = word.replace('\\u','_')
