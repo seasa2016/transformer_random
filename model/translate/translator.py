@@ -63,8 +63,7 @@ def build_translator(opt,report_score=True,logger=None,out_file=None):
 
     translator = Translator(model,global_scorer=scorer,
                             out_file=out_file, report_score=report_score,
-                            copy_attn=model_opt.copy_attn, logger=logger,
-                            **kwargs)
+                            logger=logger,**kwargs)
 
     return translator
 
