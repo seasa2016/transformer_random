@@ -81,7 +81,7 @@ def load_test_model(opt,model_path=None,mode=False):
                 if(t=='source'):
                     data_new[t][word.strip()[1:-1]] = i
                 else:
-                    data_new[t][word.strip()] = i
+                    data_new[t][word.strip()+'_'] = i
 	
     if(mode == False):
         model = build_base_model(checkpoint['opt'],opt, data_new, torch.cuda.is_available(),checkpoint)
@@ -154,7 +154,6 @@ def change(model_opt,opt,model,data_new):
 def build_model_pre(model_opt,opt,data_ori,data_new,gpu,checkpoint=None):
     #in our work,we only use text
     #build encoder
-    logger.info("origin dim {0} {1} {2}".format(model_opt.model_dim,model_opt.nin_dim_en,model_opt.nin_dim_de))
     encoder = build_encoder(model_opt,data_ori['source'])
     logger.info("build the origin encoder")
     decoder = build_decoder(model_opt,data_ori['target'])

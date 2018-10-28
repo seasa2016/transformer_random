@@ -141,7 +141,7 @@ class Translator(object):
         self.vocab['target'] = {}
         with open('./pretrain/subword.target') as f:
             for i,word in enumerate(f):
-                word = word.strip()
+                word = word.strip()+'_'
                 self.vocab['target'][ word ] = i
 
         # for debugging

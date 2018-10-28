@@ -39,7 +39,7 @@ class TranslationBuilder(object):
                         word = word.strip()[1:-1].replace('_',' ')
                         word = word.replace('\\u','_')
                     else:
-                        word = word.strip()
+                        word = word.strip()+'_'
                     
                     self.vocab[t].append(word)
 
