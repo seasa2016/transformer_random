@@ -48,8 +48,7 @@ def main(opt):
 
     if(opt.train_from is not None):
         logger.info('loading checkpoint from {0}'.format(opt.train_from))
-        device = torch.device('cpu')
-        checkpoint = torch.load(opt.train_from,map_location=device)
+        checkpoint = torch.load(opt.train_from)
         
         model_opt = checkpoint['opt']
         model_opt.nin_dim_en = model_opt.nin_dim

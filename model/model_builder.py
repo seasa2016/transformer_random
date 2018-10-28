@@ -27,7 +27,7 @@ def build_embedding(opt,word_dict,max_len,for_encoder=True,dtype='sum',tag=None)
                     feature_dim = embedding_dim,
                     padding_idx = word_padding_idx,
                     dropout = opt.dropout,
-                    dtype = dtype,,tag=tag)
+                    dtype = dtype,tag=tag)
 
 def build_encoder(opt,src_dict,tag_dict):
     """
@@ -97,7 +97,7 @@ def build_base_model(model_opt,opt,data_token,gpu,checkpoint=None,dtype=None):
     #in our work,we only use text
     
     #build encoder
-    encoder = build_encoder(model_opt,data_token['source']t,data_token['tag'])
+    encoder = build_encoder(model_opt,data_token['source'],data_token['tag'])
     logger.info("finish build encoder")
     decoder = build_decoder(model_opt,data_token['target'],dtype=dtype)
     logger.info("finish build decoder")
