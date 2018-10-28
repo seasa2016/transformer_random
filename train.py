@@ -63,9 +63,9 @@ def main(opt):
     #send the token file into the model set up function
     data_token = dict()
     
-    for ttype in ['source','target']:
+    for ttype in ['source','target','tag']:
         data_token[ ttype ] = dict()
-        with open('./data/subword.{0}'.format(ttype)) as f_in:
+        with open('./{0}/subword.{1}'.format(opt.data,ttype)) as f_in:
             for j,word in enumerate(f_in):
                 data_token[ttype][word.strip()] = j
 

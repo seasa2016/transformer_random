@@ -9,7 +9,7 @@ from . import transformer
 
 
 
-def build_embedding(opt,word_dict,max_len,for_encoder=True,dtype='sum'):
+def build_embedding(opt,word_dict,max_len,for_encoder=True,dtype='sum',tag=None):
     if(for_encoder):
         embedding_dim = opt.src_word_vec_size
     else:
@@ -27,16 +27,16 @@ def build_embedding(opt,word_dict,max_len,for_encoder=True,dtype='sum'):
                     feature_dim = embedding_dim,
                     padding_idx = word_padding_idx,
                     dropout = opt.dropout,
-                    dtype = dtype)
+                    dtype = dtype,tag=tag)
 
-def build_encoder(opt,src_dict):
+def build_encoder(opt,src_dict,tag_dict):
     """
     num_layer ,num_head,
     model_dim,nin_dim,dropout,embedding):
     """
 
     max_len = 128
-    src_embedding = build_embedding(opt,src_dict,max_len)
+    src_embedding = build_embedding(opt,src_dict,max_len,tag=tag_dict.shape[0])
     return transformer.Encoder( opt.enc_layer,opt.num_head,
                                 opt.model_dim,opt.nin_dim_en,
                                 opt.dropout,src_embedding)
@@ -80,7 +80,7 @@ def load_test_model(opt,model_path=None,mode=False):
                 if(t=='source'):
                     data_new[t][word.strip()[1:-1]] = i
                 else:
-                    data_new[t][word.strip()] = i
+                    data_new[t][word.strip()+'_'] = i
 	
     if(mode == False):
         model = build_base_model(checkpoint['opt'],opt, data_new, torch.cuda.is_available(),checkpoint)
@@ -92,14 +92,14 @@ def load_test_model(opt,model_path=None,mode=False):
     
     return model, opt
 
-def build_base_model(model_opt,opt,data_token,gpu,checkpoint=None):
+def build_base_model(model_opt,opt,data_token,gpu,checkpoint=None,dtype=None):
 
     #in our work,we only use text
     
     #build encoder
-    encoder = build_encoder(model_opt,data_token['source'])
+    encoder = build_encoder(model_opt,data_token['source'],data_token['tag'])
     logger.info("finish build encoder")
-    decoder = build_decoder(model_opt,data_token['target'],dtype=None)
+    decoder = build_decoder(model_opt,data_token['target'],dtype=dtype)
     logger.info("finish build decoder")
 
     device = torch.device("cuda" if gpu else "cpu")
@@ -162,7 +162,6 @@ def change(model_opt,opt,model,data_new):
             if(p.dim()>1):
                 xavier_normal_(p)
 
-    model.encoder.embedding.word_emb.requires_grad = True
     if(opt.replace):
         #one for the pretrain model and the other for the new model
         logger.info("with mid layer {0} {1}".format(model_opt.model_dim,opt.model_dim))
@@ -173,7 +172,6 @@ def change(model_opt,opt,model,data_new):
 def build_model_pre(model_opt,opt,data_ori,data_new,gpu,checkpoint=None):
     #in our work,we only use text
     #build encoder
-    logger.info("origin dim {0} {1} {2}".format(model_opt.model_dim,model_opt.nin_dim_en,model_opt.nin_dim_de))
     encoder = build_encoder(model_opt,data_ori['source'])
     logger.info("build the origin encoder")
     decoder = build_decoder(model_opt,data_ori['target'])
@@ -206,8 +204,8 @@ def build_model_pre(model_opt,opt,data_ori,data_new,gpu,checkpoint=None):
     return model
 
 
-def build_model(opt,data_token,checkpoint):
+def build_model(model_opt,opt,data_token,checkpoint):
     logger.info('Building model...')
-    model = build_base_model(opt,data_token,torch.cuda.is_available(),checkpoint)
+    model = build_base_model(model_opt,opt,data_token,torch.cuda.is_available(),checkpoint,dtype='sum')
 
     return model

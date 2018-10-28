@@ -4,10 +4,14 @@ import math
 from ..util.Logger import logger
 
 class Embedding(nn.Module):
-    def __init__(self,num_word,max_len,emb_dim,feature_dim,padding_idx,dropout=0,dtype='sum'):
+    def __init__(self,num_word,max_len,emb_dim,feature_dim,padding_idx,dropout=0,dtype='sum',tag=None):
+        """
+        mixual embedding for the language model encoder
+        """
         super(Embedding,self).__init__()
 
         self.dtype = dtype
+        self.tag = tag
         self.padding_idx = padding_idx
 
         self.dim = emb_dim
@@ -26,6 +30,12 @@ class Embedding(nn.Module):
             self.pos_emb.weight.requires_grad = False
         else:
             self.pos_emb = None
+
+        if(self.tag):
+            self.tag_emb = nn.Embedding(self.tag,feature_dim)
+            self.tag_emb.weight = nn.Parameter(self.tag_init(self.tag_emb.weight.shape))
+
+
         self.drop = nn.Dropout(p=dropout)
 
     def emb_init(self,shape):
@@ -41,10 +51,21 @@ class Embedding(nn.Module):
         pe[:, 1::2] = torch.cos(position.float() * div_term) 
 
         return pe
-    
-    def forward(self,x_val,pos=None):
-        #logger.debug('x: {0}'.format(x_val))
-        output = self.word_emb(x_val)
+    def tag_init(self,shape):
+        temp = torch.randn(shape)
+        return temp 
+
+    def forward(self,x,pos=None,tag=False):
+        #take out the first word and extract the embedding
+        
+        if(tag):
+            x_tag = x[0]
+            x_val = x[1:]
+            output = torch.cat((self.tag_emb(x_tag),self.word_emb(x_val)),dim=0)
+        else:
+            output = self.word_emb(x_val)
+
+
         output = output * math.sqrt(self.dim)
         if(self.pos_emb is not None):
             if(pos is None):
@@ -56,7 +77,6 @@ class Embedding(nn.Module):
             elif(self.dtype=='cat'):
                 output = torch.cat([output,pos_out.expand_as(output)],dim=-1)
         output = self.drop(output)
-        
         
         return output
 

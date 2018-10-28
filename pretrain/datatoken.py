@@ -52,7 +52,9 @@ def count_up(file_name):
             #<PAD> <UNK> <SOS> <EOS>
             if(t == 'target'):
                 f_out.write("<pad>\n<EOS>\n<SOS>\n") 
-            
+            elif(t == 'language'):
+                f_out.write("_Chinese\n_Taiwanese\n_Japanese\n_Cantonese\n_Korean\n_Western\n_None\n_Mix\n<english>\n<chinese>")
+                continue
             for i in range(len(count[t])):
                 f_out.write(u"{0}\n".format(count[t][i][0]))
 
