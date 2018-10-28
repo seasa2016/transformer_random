@@ -37,7 +37,7 @@ class Encoder(nn.Module):
         logger.debug('x shpae: {0}'.format(x.shape))
         
         #self._check_args(x,lengths)
-        emb = self.embedding(x)
+        emb = self.embedding(x,tag=True)
 
         out = emb.transpose(0,1).contiguous()
         words = x[:,:].transpose(0,1)

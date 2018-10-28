@@ -26,7 +26,7 @@ class itemDataset(Dataset):
                     for _ in raw[name].strip().split(","):
                         playlist[name].append(int(_))
                 else:
-                    playlist[name] = [raw[name]+2]
+                    playlist[name] = [raw[name]]
 
             if(len(playlist['source'])<5 or len(playlist['target'])<5 ):
                 continue
