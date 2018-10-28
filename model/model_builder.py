@@ -9,7 +9,7 @@ from . import transformer
 
 
 
-def build_embedding(opt,word_dict,max_len,for_encoder=True,dtype='sum'):
+def build_embedding(opt,word_dict,max_len,for_encoder=True,dtype='sum',tag=None):
     if(for_encoder):
         embedding_dim = opt.src_word_vec_size
     else:
@@ -27,16 +27,16 @@ def build_embedding(opt,word_dict,max_len,for_encoder=True,dtype='sum'):
                     feature_dim = embedding_dim,
                     padding_idx = word_padding_idx,
                     dropout = opt.dropout,
-                    dtype = dtype)
+                    dtype = dtype,,tag=tag)
 
-def build_encoder(opt,src_dict):
+def build_encoder(opt,src_dict,tag_dict):
     """
     num_layer ,num_head,
     model_dim,nin_dim,dropout,embedding):
     """
 
     max_len = 128
-    src_embedding = build_embedding(opt,src_dict,max_len)
+    src_embedding = build_embedding(opt,src_dict,max_len,tag=tag_dict.shape[0])
     return transformer.Encoder( opt.enc_layer,opt.num_head,
                                 opt.model_dim,opt.nin_dim_en,
                                 opt.dropout,src_embedding)
@@ -97,7 +97,7 @@ def build_base_model(model_opt,opt,data_token,gpu,checkpoint=None,dtype=None):
     #in our work,we only use text
     
     #build encoder
-    encoder = build_encoder(model_opt,data_token['source'])
+    encoder = build_encoder(model_opt,data_token['source']t,data_token['tag'])
     logger.info("finish build encoder")
     decoder = build_decoder(model_opt,data_token['target'],dtype=dtype)
     logger.info("finish build decoder")

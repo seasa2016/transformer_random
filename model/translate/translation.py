@@ -31,15 +31,15 @@ class TranslationBuilder(object):
         self.has_target = has_target
         
         self.vocab = {}
-        for t in ['source','target']:
+        for t in ['source','target','tag']:
             self.vocab[t] = []
             with open('./pretrain/subword.{0}'.format(t)) as f:
                 for word in f:
-                    if(t=='source'):
+                    if(t=='target'):
+                        word = word.strip()
+                    else:
                         word = word.strip()[1:-1].replace('_',' ')
                         word = word.replace('\\u','_')
-                    else:
-                        word = word.strip()
                     
                     self.vocab[t].append(word)
 
@@ -51,16 +51,19 @@ class TranslationBuilder(object):
             raise ValueError("you should choose a source type to convert")
 
         vocab = self.vocab[ttype]
-        
         temp = []
-        for _ in pred:
+        
+        if(ttype=='source'):
+            temp = [ self.vocab['tag'][pred[0]] ]
+
+        for _ in pred[1:]:
             try:
                 temp.append(vocab[_])
             except KeyError as e:
                 raise KeyError('the word {0} is unsee '.format(e.args[0]))
-        print(temp)
+        #print(temp)
         if(ttype=='source'):
-            target = ''+temp[0]
+            target = ''+temp[0]+' '
             for i in range(1,len(temp)):
                 try:
                     if((temp[i-1][0] in ALPHANUMERIC_CHAR_SET ) != (temp[i][0] in ALPHANUMERIC_CHAR_SET )):

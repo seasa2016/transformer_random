@@ -5,6 +5,9 @@ from ..util.Logger import logger
 
 class Embedding(nn.Module):
     def __init__(self,num_word,max_len,emb_dim,feature_dim,padding_idx,dropout=0,dtype='sum',tag=None):
+        """
+        mixual embedding for the language model encoder
+        """
         super(Embedding,self).__init__()
 
         self.dtype = dtype
