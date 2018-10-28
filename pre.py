@@ -129,7 +129,7 @@ if(__name__ == "__main__"):
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     opts.add_md_help_argument(parser)
-    opts.model_opts(parser)
+    opts.pre_model_opts(parser)
     opts.train_opts(parser)
 
     opt = parser.parse_args()

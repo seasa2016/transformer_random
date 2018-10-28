@@ -62,7 +62,7 @@ class Decoder(nn.Module):
         decoder for the transformer
     """
     def __init__(self,num_layer,num_head,model_dim,nin_dim,num_word,    
-                max_len,copy_attn,self_attn_type,dropout,embedding):
+                max_len,self_attn_type,dropout,embedding):
         super(Decoder,self).__init__()
     
         self.decoder_type = 'transformer'
@@ -75,10 +75,6 @@ class Decoder(nn.Module):
             self_attn_type=self_attn_type) for _ in range(num_layer)
         ])
 
-        self._copy = False
-        if(copy_attn):
-            pass
-            self._copy = True
         self.layer_norm = LayerNorm(model_dim)
         self.linear = nn.Linear(model_dim,num_word)
 
@@ -93,8 +89,6 @@ class Decoder(nn.Module):
 
         outputs = []
         attns = {"std":[]}
-        if(self._copy):
-            attns["copy"] = []
 
         emb = self.embedding(tar,pos=step)
         assert(emb.dim()==3)
@@ -141,8 +135,6 @@ class Decoder(nn.Module):
         attn = attn.transpose(0,1).contiguous()
 
         attns["std"] = attn
-        if(self._copy):
-            attns["copy"] = attn
         
         if(state.cache is None):
             state = state.update_state(tar,saved_inputs)
