@@ -157,7 +157,6 @@ def change(model_opt,opt,model,data_new):
         if(p.requires_grad):
             xavier_normal_(p)
 
-    model.encoder.embedding.word_emb.requires_grad = True
     if(opt.replace):
         #one for the pretrain model and the other for the new model
         logger.info("with mid layer {0} {1}".format(model_opt.model_dim,opt.model_dim))

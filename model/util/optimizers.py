@@ -62,8 +62,6 @@ def build_optim(model,opt,checkpoint=None,ttype=None):
                     logger.info('{0}'.format(name))
                     params.append(p)
 
-        logger.info('part of the embedding')
-        params.append(model.encoder.embedding.word_emb.weight[2:11])
         logger.info('*'*10)
     else:
         params = []    
