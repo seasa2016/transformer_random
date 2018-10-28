@@ -58,12 +58,12 @@ def build_optim(model,opt,checkpoint=None,ttype=None):
         
         for name,p in model.encoder.named_parameters():
             if p.requires_grad:
-                if('embedding' not in name.lower()):
-                    logger.info('{0}'.format(name))
-                    params.append(p)
+				#if('embedding' not in name.lower()):
+                logger.info('{0}'.format(name))
+                params.append(p)
 
         logger.info('part of the embedding')
-        params.append(model.encoder.embedding.word_emb.weight[2:11])
+		#params.append(model.encoder.embedding.word_emb.weight[2:11])
         logger.info('*'*10)
     else:
         params = []    

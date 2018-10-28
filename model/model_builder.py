@@ -152,10 +152,15 @@ def change(model_opt,opt,model,data_new):
     #lock the grad for the encoder
     model.encoder.embedding.word_emb.requires_grad = False
 
+    if model_opt.param_init != 0.0:
+        for p in model.parameters():
+            if(p.requires_grad):
+                p.data.uniform_(-model_opt.param_init, model_opt.param_init)
 
     for p in model.parameters():
         if(p.requires_grad):
-            xavier_normal_(p)
+            if(p.dim()>1):
+                xavier_normal_(p)
 
     model.encoder.embedding.word_emb.requires_grad = True
     if(opt.replace):

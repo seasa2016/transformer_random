@@ -52,6 +52,8 @@ def main(opt):
         checkpoint = torch.load(opt.train_from,map_location=device)
         
         model_opt = checkpoint['opt']
+        model_opt.nin_dim_en = model_opt.nin_dim
+        model_opt.nin_dim_de = model_opt.nin_dim
     else:
         raise ValueError("you should choose a model to load from in this mode`")
         checkpoint = None
