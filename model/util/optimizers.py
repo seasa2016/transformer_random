@@ -59,8 +59,6 @@ def build_optim(model,opt,checkpoint=None,ttype=None):
             if p.requires_grad:
                 logger.info('{0}'.format(name))
                 params.append(p)
-
-        logger.info('*'*10)
     else:
         params = []    
         logger.info('*'*10)
