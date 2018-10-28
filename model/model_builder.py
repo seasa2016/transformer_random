@@ -36,7 +36,7 @@ def build_encoder(opt,src_dict,tag_dict):
     """
 
     max_len = 128
-    src_embedding = build_embedding(opt,src_dict,max_len,tag=tag_dict.shape[0])
+    src_embedding = build_embedding(opt,src_dict,max_len,tag=tag_dict)
     return transformer.Encoder( opt.enc_layer,opt.num_head,
                                 opt.model_dim,opt.nin_dim_en,
                                 opt.dropout,src_embedding)
@@ -97,7 +97,10 @@ def build_base_model(model_opt,opt,data_token,gpu,checkpoint=None,dtype=None):
     #in our work,we only use text
     
     #build encoder
-    encoder = build_encoder(model_opt,data_token['source'],data_token['tag'])
+    if('tag' in data_token):
+        encoder = build_encoder(model_opt,data_token['source'],len(data_token['tag']) if data_token['tag'] else None)
+    else:
+        encoder = build_encoder(model_opt,data_token['source'],None)
     logger.info("finish build encoder")
     decoder = build_decoder(model_opt,data_token['target'],dtype=dtype)
     logger.info("finish build decoder")
