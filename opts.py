@@ -74,8 +74,80 @@ def model_opts(parser):
     group.add_argument('-num_head', type=int, default=8,
                        help='Number of heads for transformer self-attention')
 
-    group.add_argument('-copy_attn', action='store_true',
-                       help='this is for pointer network copy the answer from input')
+
+def pre_model_opts(parser):
+    group = parser.add_argument_group('model_embedding')
+    group.add_argument('-src_word_vec_size', type=int, default=256,
+                       help='Word embedding size for src.')
+    group.add_argument('-tar_word_vec_size', type=int, default=256,
+                       help='Word embedding size for tgt.')
+
+    group.add_argument('-share_decoder_embeddings', action='store_true',
+                       help="""Use a shared weight matrix for the input and
+                       output word  embeddings in the decoder.""")
+    group.add_argument('-share_embeddings', action='store_true',
+                       help="""Share the word embeddings between encoder
+                       and decoder. Need to use shared dictionary for this
+                       option.""")
+    group.add_argument('-position_encoding', action='store_true',
+                       help="""Use a sin to mark relative words positions.
+                       Necessary for non-RNN style models.
+                       """)
+
+    group = parser.add_argument_group('model_embedding_features')
+    group.add_argument('-feat_merge', type=str, default='sum',
+                       choices=['concat', 'sum', 'mlp'],
+                       help="""Merge action for incorporating features embeddings.
+                       Options [concat|sum|mlp].""")
+    group.add_argument('-feat_vec_size', type=int, default=256,
+                       help="""If specified, feature embedding sizes
+                       will be set to this. Otherwise, feat_vec_exponent
+                       will be used.""")
+
+    # Encoder-Deocder Options
+    group = parser.add_argument_group('Model- Encoder-Decoder')
+    group.add_argument('-encoder_type', type=str, default='transformer',
+                       choices=['rnn', 'brnn', 'mean', 'transformer', 'cnn'],
+                       help="""Type of encoder layer to use. Non-RNN layers
+                       are experimental. Options are
+                       [rnn|brnn|mean|transformer|cnn].""")
+    group.add_argument('-decoder_type', type=str, default='transformer',
+                       choices=['rnn', 'transformer', 'cnn'],
+                       help="""Type of decoder layer to use. Non-RNN layers
+                       are experimental. Options are
+                       [rnn|transformer|cnn].""")
+    group.add_argument('-replace', action='store_true',
+                       help="""whether to pass a layer to reduce the dim""")
+
+    group.add_argument('-num_layer', type=int, default=3,
+                       help='Number of layers in the encoder')
+    group.add_argument('-enc_layer', type=int, default=6,
+                       help='Number of layers in the encoder')
+    group.add_argument('-dec_layer', type=int, default=3,
+                       help='Number of layers in the decoder')
+    group.add_argument('-model_dim', type=int, default=256,
+                       help='Size of rnn hidden states')
+    group.add_argument('-nin_dim_en', type=int, default=1024,
+                       help='Size of hidden transformer feed-forward')
+    group.add_argument('-nin_dim_de', type=int, default=512,
+                       help='Size of hidden transformer feed-forward')
+    
+
+    group.add_argument('-dropout', type=float, default=0.1,
+                       help="Dropout probability; applied in LSTM stacks.")    
+
+    # Attention options
+    group = parser.add_argument_group('Model- Attention')
+    group.add_argument('-global_attention', type=str, default='general',
+                       choices=['dot', 'general', 'mlp'],
+                       help="""The attention type to use:
+                       dotprod or general (Luong) or MLP (Bahdanau)""")
+    group.add_argument('-self_attn_type', type=str, default="scaled_dot",
+                       help="""Self attention type in Transformer decoder
+                       layer -- currently "scaled_dot" or "average" """)
+    group.add_argument('-num_head', type=int, default=8,
+                       help='Number of heads for transformer self-attention')
+
 
 
 def train_opts(parser):

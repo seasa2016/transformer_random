@@ -52,6 +52,8 @@ def main(opt):
         checkpoint = torch.load(opt.train_from,map_location=device)
         
         model_opt = checkpoint['opt']
+        model_opt.nin_dim_en = model_opt.nin_dim
+        model_opt.nin_dim_de = model_opt.nin_dim
     else:
         raise ValueError("you should choose a model to load from in this mode`")
         checkpoint = None
@@ -129,7 +131,7 @@ if(__name__ == "__main__"):
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     opts.add_md_help_argument(parser)
-    opts.model_opts(parser)
+    opts.pre_model_opts(parser)
     opts.train_opts(parser)
 
     opt = parser.parse_args()

@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from torch.nn.init import xavier_uniform_
+from torch.nn.init import xavier_uniform_,xavier_normal_
 
 from .module.Embedding import Embedding
 from .util.Logger import logger
@@ -43,8 +43,7 @@ def build_encoder(opt,src_dict):
 
 def build_decoder(opt,tar_dict,dtype='sum'):
     """
-    num_layer,model_dim,num_head,nin_dim,
-    copy_attn,self_attn_type,dropout,embedding
+    function to build the decoder
     """
 
     max_len = 128
@@ -52,7 +51,7 @@ def build_decoder(opt,tar_dict,dtype='sum'):
     return transformer.Decoder(
         opt.dec_layer,opt.num_head,
         opt.model_dim,opt.nin_dim_de,len(tar_dict),max_len,
-        opt.copy_attn,opt.self_attn_type,opt.dropout,tar_embedding
+        opt.self_attn_type,opt.dropout,tar_embedding
     )
 
 def load_test_model(opt,model_path=None,mode=False):
@@ -121,12 +120,14 @@ def build_base_model(model_opt,opt,data_token,gpu,checkpoint=None):
     else:
         if model_opt.param_init != 0.0:
             for p in model.parameters():
-                p.data.uniform_(-model_opt.param_init, model_opt.param_init)
+                if(p.requires_grad):
+                    p.data.uniform_(-model_opt.param_init, model_opt.param_init)
             
         if model_opt.param_init_glorot:
             for p in model.parameters():
-                if p.dim() > 1:
-                    xavier_uniform_(p)
+                if(p.requires_grad):
+                    if p.dim() > 1:
+                        xavier_normal_(p)
     
     model.to(device)
     logger.info('the model is now in the {0} mode'.format(device))
@@ -138,12 +139,30 @@ def change(model_opt,opt,model,data_new):
     """
     model.decoder = build_decoder(opt,data_new['target'],dtype='none')
 
+    #update the parameter
+    model_opt.tar_word_vec_size = opt.tar_word_vec_size
+    model_opt.dropout = opt.dropout
+    model_opt.dec_layer = opt.dec_layer
+    model_opt.num_head = opt.num_head
+    model_opt.model_dim = opt.model_dim
+    model_opt.nin_dim_de = opt.nin_dim_de
+    model_opt.self_attn_type = opt.self_attn_type
+    model_opt.dropout = opt.dropout
+    
     #lock the grad for the encoder
-    for i in model.encoder.parameters():
-        i.requires_grad = False 
+    model.encoder.embedding.word_emb.requires_grad = False
+
+    if model_opt.param_init != 0.0:
+        for p in model.parameters():
+            if(p.requires_grad):
+                p.data.uniform_(-model_opt.param_init, model_opt.param_init)
+
+    for p in model.parameters():
+        if(p.requires_grad):
+            if(p.dim()>1):
+                xavier_normal_(p)
+
     model.encoder.embedding.word_emb.requires_grad = True
-
-
     if(opt.replace):
         #one for the pretrain model and the other for the new model
         logger.info("with mid layer {0} {1}".format(model_opt.model_dim,opt.model_dim))
