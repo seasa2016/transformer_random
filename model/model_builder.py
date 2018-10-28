@@ -92,14 +92,14 @@ def load_test_model(opt,model_path=None,mode=False):
     
     return model, opt
 
-def build_base_model(model_opt,opt,data_token,gpu,checkpoint=None):
+def build_base_model(model_opt,opt,data_token,gpu,checkpoint=None,dtype=None):
 
     #in our work,we only use text
     
     #build encoder
     encoder = build_encoder(model_opt,data_token['source'])
     logger.info("finish build encoder")
-    decoder = build_decoder(model_opt,data_token['target'],dtype=None)
+    decoder = build_decoder(model_opt,data_token['target'],dtype=dtype)
     logger.info("finish build decoder")
 
     device = torch.device("cuda" if gpu else "cpu")
@@ -201,8 +201,8 @@ def build_model_pre(model_opt,opt,data_ori,data_new,gpu,checkpoint=None):
     return model
 
 
-def build_model(opt,data_token,checkpoint):
+def build_model(model_opt,opt,data_token,checkpoint):
     logger.info('Building model...')
-    model = build_base_model(opt,data_token,torch.cuda.is_available(),checkpoint)
+    model = build_base_model(model_opt,opt,data_token,torch.cuda.is_available(),checkpoint,dtype='sum')
 
     return model
