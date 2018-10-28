@@ -65,25 +65,28 @@ def main(opt):
     #build model
     #send the token file into the model set up function
     data_ori = dict()
-    for ttype in ['source','target']:
+    for ttype in ['source','target','tag']:
         data_ori[ ttype ] = dict()
         with open('./ch_en/subword.{0}'.format(ttype)) as f_in:
             for j,word in enumerate(f_in):
                 data_ori[ttype][word.strip()[1:-1]] = j
     logger.info("source size:{0}".format(len(data_ori['source'])))
     logger.info("target size:{0}".format(len(data_ori['target'])))
+    logger.info("tag size:{0}".format(len(data_ori['tag'])))
 
     data_new = dict()
-    for ttype in ['source','target']:
+    for ttype in ['source','target','tag']:
         data_new[ ttype ] = dict()
         with open('./pretrain/subword.{0}'.format(ttype)) as f_in:
             for j,word in enumerate(f_in):
-                if(ttype == 'source'):
-                    data_new[ttype][word.strip()[1:-1]] = j
-                else:
+                if(ttype == 'target'):
                     data_new[ttype][word.strip()+'_'] = j
+                else:
+                    data_new[ttype][word.strip()[1:-1]] = j
+                    
     logger.info("source size:{0}".format(len(data_new['source'])))
     logger.info("target size:{0}".format(len(data_new['target'])))
+    logger.info("tag size:{0}".format(len(data_new['tag'])))
 
     logger.info("start build model")
     model = build_model_pre(model_opt,opt,data_ori,data_new,gpu=torch.cuda.is_available(),checkpoint=checkpoint)
