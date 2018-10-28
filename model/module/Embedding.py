@@ -61,9 +61,13 @@ class Embedding(nn.Module):
         if(tag):
             x_tag = x[0]
             x_val = x[1:]
-            output = torch.cat((self.tag_emb(x_tag),self.word_emb(x_val)),dim=0)
+
+            etag = self.tag_emb(x_tag).view(1,-1,256)
+            eword = self.word_emb(x_val)
+
+            output = torch.cat((etag,eword),dim=0)
         else:
-            output = self.word_emb(x_val)
+            output = self.word_emb(x)
 
 
         output = output * math.sqrt(self.dim)

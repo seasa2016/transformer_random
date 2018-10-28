@@ -175,7 +175,7 @@ def change(model_opt,opt,model,data_new):
 def build_model_pre(model_opt,opt,data_ori,data_new,gpu,checkpoint=None):
     #in our work,we only use text
     #build encoder
-    encoder = build_encoder(model_opt,data_ori['source'])
+    encoder = build_encoder(model_opt,data_ori['source'],len(data_ori['tag']))
     logger.info("build the origin encoder")
     decoder = build_decoder(model_opt,data_ori['target'])
     logger.info("build the origin decoder")
