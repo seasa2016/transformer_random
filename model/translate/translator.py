@@ -138,7 +138,7 @@ class Translator(object):
         self.vocab = {}
         #set up the vocab for decode
         self.vocab['target'] = {}
-        with open('./pretrain/subword.target') as f:
+        with open('./{0}/subword.target'.format(opt.data)) as f:
             for i,word in enumerate(f):
                 word = word.strip()+'_'
                 self.vocab['target'][ word ] = i

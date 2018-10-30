@@ -33,7 +33,7 @@ class TranslationBuilder(object):
         self.vocab = {}
         for t in ['source','target','tag']:
             self.vocab[t] = []
-            with open('./pretrain/subword.{0}'.format(t)) as f:
+            with open('./{0}/subword.{1}'.format(opt.data,t)) as f:
                 for word in f:
                     if(t=='target'):
                         word = word.strip()+'_'

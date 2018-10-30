@@ -78,12 +78,12 @@ def main(opt):
         
     logger.info("start build training,validing data")
   
-    train_dataset = itemDataset(file_name='./data/playlist_20181023_train.csv',
+    train_dataset = itemDataset(file_name='./{0}/playlist_20181023_train.csv'.format(opt.data),
                         transform=transforms.Compose([ToTensor()]))
     trainloader = DataLoader(train_dataset, batch_size=opt.batch_size ,
                         shuffle=False, num_workers=32,collate_fn=collate_fn)
 
-    valid_dataset = itemDataset(file_name='./data/playlist_20181023_valid.csv',
+    valid_dataset = itemDataset(file_name='./{0}/playlist_20181023_valid.csv'.format(opt.data),
                         transform=transforms.Compose([ToTensor()]))
     validloader = DataLoader(valid_dataset, batch_size=opt.valid_batch_size,
                         shuffle=False, num_workers=32,collate_fn=collate_fn)
