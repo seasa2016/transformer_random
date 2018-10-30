@@ -65,17 +65,10 @@ def load_test_model(opt,model_path=None,mode=False):
     
     checkpoint = torch.load(model_path)
 
-    data_ori = dict()
-    for t in ['source','target']:
-        data_ori[t] = dict()
-        with open('./ch_en/subword.{0}'.format(t)) as f_in:
-            for i,word in enumerate(f_in):
-                data_ori[t][word.strip()[1:-1]] = i
-
     data_new = dict()
     for t in ['source','target']:
         data_new[t] = dict()
-        with open('./pretrain/subword.{0}'.format(t)) as f_in:
+        with open('./{0}/subword.{1}'.format(opt.data,t)) as f_in:
             for i,word in enumerate(f_in):
                 if(t=='source'):
                     data_new[t][word.strip()[1:-1]] = i
