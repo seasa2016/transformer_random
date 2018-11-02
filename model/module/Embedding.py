@@ -32,10 +32,12 @@ class Embedding(nn.Module):
             self.pos_emb = None
 
         if(self.tag):
-            self.tag_emb = nn.Embedding(self.tag,feature_dim)
+            self.tag_emb = nn.Embedding(self.tag,emb_dim)
+            print("embedding with shape",self.tag_emb.weight.shape)
             self.tag_emb.weight = nn.Parameter(self.tag_init(self.tag_emb.weight.shape))
 
 
+        self.drop_sym = nn.Dropout(p=dropout)
         self.drop = nn.Dropout(p=dropout)
 
     def emb_init(self,shape):
@@ -62,9 +64,9 @@ class Embedding(nn.Module):
             x_tag = x[0]
             x_val = x[1:]
 
-            etag = self.tag_emb(x_tag).view(1,-1,256)
-            eword = self.word_emb(x_val)
 
+            eword = self.word_emb(x_val)
+            etag = self.tag_emb(x_tag).view(1,-1,eword.shape[-1])
             output = torch.cat((etag,eword),dim=0)
         else:
             output = self.word_emb(x)

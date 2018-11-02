@@ -25,7 +25,7 @@ class TranslationBuilder(object):
        has_tgt (bool): will the batch have gold targets
     """
 
-    def __init__(self,n_best=1,replace_unk=False,has_target=False):
+    def __init__(self,data,n_best=1,replace_unk=False,has_target=False):
         self.n_best = n_best
         self.replace_unk = replace_unk
         self.has_target = has_target
@@ -33,7 +33,7 @@ class TranslationBuilder(object):
         self.vocab = {}
         for t in ['source','target','tag']:
             self.vocab[t] = []
-            with open('./{0}/subword.{1}'.format(opt.data,t)) as f:
+            with open('./{0}/subword.{1}'.format(data,t)) as f:
                 for word in f:
                     if(t=='target'):
                         word = word.strip()+'_'

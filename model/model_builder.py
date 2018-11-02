@@ -66,7 +66,7 @@ def load_test_model(opt,model_path=None,mode=False):
     checkpoint = torch.load(model_path)
 
     data_new = dict()
-    for t in ['source','target']:
+    for t in ['source','target','tag']:
         data_new[t] = dict()
         with open('./{0}/subword.{1}'.format(opt.data,t)) as f_in:
             for i,word in enumerate(f_in):
@@ -76,7 +76,7 @@ def load_test_model(opt,model_path=None,mode=False):
                     data_new[t][word.strip()+'_'] = i
 	
     if(mode == False):
-        model = build_base_model(checkpoint['opt'],opt, data_new, torch.cuda.is_available(),checkpoint)
+        model = build_base_model(checkpoint['opt'],opt, data_new, torch.cuda.is_available(),checkpoint,dtype='sum')
     else:
 		#build_model_pre(opt,opt,data_ori,data_new,True,checkpoint=checkpoint)
         model = build_base_model(opt,opt,data_new,True,checkpoint=checkpoint)
@@ -202,6 +202,6 @@ def build_model_pre(model_opt,opt,data_ori,data_new,gpu,checkpoint=None):
 
 def build_model(model_opt,opt,data_token,checkpoint):
     logger.info('Building model...')
-    model = build_base_model(model_opt,opt,data_token,torch.cuda.is_available(),checkpoint,dtype='sum')
+    model = build_base_model(model_opt,opt,data_token,torch.cuda.is_available(),checkpoint,dtype=None)
 
     return model

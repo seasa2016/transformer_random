@@ -257,7 +257,7 @@ class NMTLossCompute(LossComputeBase):
                     label_smoothing=0.0):
         super(NMTLossCompute,self).__init__(model,tgt_dict_size)
         
-        if(label_smoothing >=0):
+        if(label_smoothing >=-1):
             self.criterion = LabelSmoothingLoss(
                 label_smoothing,tgt_dict_size,padding_idx=self.padding_idx)
         else:

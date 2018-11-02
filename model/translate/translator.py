@@ -44,7 +44,7 @@ def build_translator(opt,report_score=True,logger=None,out_file=None):
     opts.model_opts(dummy_parser)
 
     #we wont use ensemble here XD
-    model, model_opt = load_test_model(opt,mode=True)
+    model, model_opt = load_test_model(opt)
     
     scorer = Beam.GNMTGlobalScorer( opt.alpha,
                                     opt.beta,
@@ -55,7 +55,7 @@ def build_translator(opt,report_score=True,logger=None,out_file=None):
               for k in ["batch_size","beam_size", "n_best", "max_length", "min_length",
                         "stepwise_penalty", "block_ngram_repeat",
                         "ignore_when_blocking", "dump_beam", "report_bleu",
-                        "replace_unk", "gpu", "verbose", "fast"]}
+                        "replace_unk", "gpu", "verbose", "fast","data"]}
     
 
     logger.info("start build testing data")
@@ -109,13 +109,17 @@ class Translator(object):
                  report_rouge=False,
                  verbose=False,
                  out_file=None,
-                 fast=False):
+                 fast=False,
+                 data=None):
+        assert(data!=None),"you should choose vocab file"
         self.logger = logger
         self.gpu = gpu
         self.cuda = gpu > -1
 
         self.model = model
 
+        self.data = data
+        
         self.batch_size = batch_size
         self.n_best = n_best
         self.max_length = max_length
@@ -138,7 +142,7 @@ class Translator(object):
         self.vocab = {}
         #set up the vocab for decode
         self.vocab['target'] = {}
-        with open('./{0}/subword.target'.format(opt.data)) as f:
+        with open('./{0}/subword.target'.format(self.data)) as f:
             for i,word in enumerate(f):
                 word = word.strip()+'_'
                 self.vocab['target'][ word ] = i
@@ -197,7 +201,7 @@ class Translator(object):
         self.dataloader = DataLoader(test_dataset, batch_size=self.batch_size,shuffle=False, num_workers=10,collate_fn=collate_fn)
     
         builder  = translation.TranslationBuilder(
-            self.n_best, self.replace_unk,tgt_path is not None
+            self.data,self.n_best, self.replace_unk,tgt_path is not None
         )
 
         counter = count(1)

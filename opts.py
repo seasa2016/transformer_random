@@ -3,9 +3,9 @@ import argparse
 
 def model_opts(parser):
     group = parser.add_argument_group('model_embedding')
-    group.add_argument('-src_word_vec_size', type=int, default=256,
+    group.add_argument('-src_word_vec_size', type=int, default=32,
                        help='Word embedding size for src.')
-    group.add_argument('-tar_word_vec_size', type=int, default=256,
+    group.add_argument('-tar_word_vec_size', type=int, default=32,
                        help='Word embedding size for tgt.')
     group.add_argument('-data', type=str, default='ch_en',
                        help='Word embedding size for tgt.')    
@@ -27,7 +27,7 @@ def model_opts(parser):
                        choices=['concat', 'sum', 'mlp'],
                        help="""Merge action for incorporating features embeddings.
                        Options [concat|sum|mlp].""")
-    group.add_argument('-feat_vec_size', type=int, default=256,
+    group.add_argument('-feat_vec_size', type=int, default=32,
                        help="""If specified, feature embedding sizes
                        will be set to this. Otherwise, feat_vec_exponent
                        will be used.""")
@@ -49,15 +49,15 @@ def model_opts(parser):
 
     group.add_argument('-num_layer', type=int, default=3,
                        help='Number of layers in the encoder')
-    group.add_argument('-enc_layer', type=int, default=6,
+    group.add_argument('-enc_layer', type=int, default=3,
                        help='Number of layers in the encoder')
-    group.add_argument('-dec_layer', type=int, default=3,
+    group.add_argument('-dec_layer', type=int, default=2,
                        help='Number of layers in the decoder')
-    group.add_argument('-model_dim', type=int, default=256,
+    group.add_argument('-model_dim', type=int, default=32,
                        help='Size of rnn hidden states')
-    group.add_argument('-nin_dim_en', type=int, default=1024,
+    group.add_argument('-nin_dim_en', type=int, default=64,
                        help='Size of hidden transformer feed-forward')
-    group.add_argument('-nin_dim_de', type=int, default=512,
+    group.add_argument('-nin_dim_de', type=int, default=64,
                        help='Size of hidden transformer feed-forward')
     
 
@@ -217,7 +217,7 @@ def train_opts(parser):
 
     # Optimization options
     group = parser.add_argument_group('Optimization- Type')
-    group.add_argument('-batch_size', type=int, default=32,
+    group.add_argument('-batch_size', type=int, default=50,
                        help='Maximum batch size for training')
     group.add_argument('-batch_type', default='tokens',
                        choices=["sents", "tokens"],
@@ -276,7 +276,7 @@ def train_opts(parser):
                        suggested a value of 0.98 for beta2, this parameter may
                        not work well for normal models / default
                        baselines.""")
-    group.add_argument('-label_smoothing', type=float, default=0.1,
+    group.add_argument('-label_smoothing', type=float, default=0.7,
                        help="""Label smoothing value epsilon.
                        Probabilities of all non-true labels
                        will be smoothed by epsilon / (vocab_size - 1).
@@ -362,9 +362,9 @@ def translation_opts(parser):
     group.add_argument('-fast', action="store_true",
                        help="""Use fast beam search (some features may not be
                        supported!)""")
-    group.add_argument('-beam_size', type=int, default=3,
+    group.add_argument('-beam_size', type=int, default=5,
                        help='Beam size')
-    group.add_argument('-min_length', type=int, default=5,
+    group.add_argument('-min_length', type=int, default=15,
                        help='Minimum prediction length')
     group.add_argument('-max_length', type=int, default=100,
                        help='Maximum prediction length.')

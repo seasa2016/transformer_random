@@ -101,7 +101,7 @@ class Trainer(object):
     
         self.model.train()
     
-    def train(self, train_loader, valid_loader, train_steps, valid_steps,relace):
+    def train(self, train_loader, valid_loader, train_steps, valid_steps,relace=False):
         """
         The main training loops.
         by iterating over training data (i.e. `train_iter_fct`)

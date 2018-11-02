@@ -67,13 +67,16 @@ def main(opt):
         data_token[ ttype ] = dict()
         with open('./{0}/subword.{1}'.format(opt.data,ttype)) as f_in:
             for j,word in enumerate(f_in):
-                data_token[ttype][word.strip()] = j
+                if(ttype == 'source'):
+                    data_token[ttype][word.strip()[1:-1]] = j
+                else:
+                    data_token[ttype][word.strip()+'_'] = j
 
     logger.info("source size:{0}".format(len(data_token['source'])))
     logger.info("target size:{0}".format(len(data_token['target'])))
 
     logger.info("start build model")
-    model = build_model(opt,data_token,checkpoint)
+    model = build_model(model_opt,opt,data_token,checkpoint)
     logger.info(model)
         
     logger.info("start build training,validing data")
