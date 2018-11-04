@@ -15,7 +15,7 @@ def build_loss_computer(model,tgt_dict_size,opt,train=True):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     compute = NMTLossCompute(
-        model,tgt_dict_size,label_smoothing = opt.label_smoothing if train else 0.0)
+        model,tgt_dict_size,label_smoothing = opt.label_smoothing)
     
     compute.to(device)
 

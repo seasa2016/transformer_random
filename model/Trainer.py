@@ -209,7 +209,7 @@ class Trainer(object):
             if( self.gpu_verbose_level > 0):
                 logger.info('GpuRank %d: we completed an epoch \
                             at step %d' % (self.gpu_rank, step))
-        valid_stats = self.validate(valid_loader)
+        valid_stats = self.validate(valid_loader,replace)
         return total_stats
 
     def validate(self,valid_loader,replace):

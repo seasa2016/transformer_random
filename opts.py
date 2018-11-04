@@ -243,7 +243,7 @@ def train_opts(parser):
                        help="""Maximum batches of words in a sequence to run
                         the generator on in parallel. Higher is faster, but
                         uses more memory.""")
-    group.add_argument('-train_steps', type=int, default=300000,
+    group.add_argument('-train_steps', type=int, default=30000,
                        help='Number of training steps')
     group.add_argument('-epochs', type=int, default=100,
                        help='Deprecated epochs see train_steps')
@@ -276,7 +276,7 @@ def train_opts(parser):
                        suggested a value of 0.98 for beta2, this parameter may
                        not work well for normal models / default
                        baselines.""")
-    group.add_argument('-label_smoothing', type=float, default=0.7,
+    group.add_argument('-label_smoothing', type=float, default=0,
                        help="""Label smoothing value epsilon.
                        Probabilities of all non-true labels
                        will be smoothed by epsilon / (vocab_size - 1).
