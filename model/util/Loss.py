@@ -225,23 +225,16 @@ class LabelSmoothingLoss(nn.Module):
         model_prob = self.one_hot.repeat(target.shape[0],1)
 		#print("origin",batch['origin'].shape)
 		#print("target",batch['target'].shape)
-
         for i in range(model_prob.shape[0]):
             temp = now*shard_size+i//part
             
-            #for the last put eos
             if( temp >= batch['target_len'][i%part]-2 ):
                 continue
-            #else put available ans
             else:  
-				#print( temp , batch['target_len'][i%part]-2 )
                 model_prob[i][ batch['origin'][i%part][temp:] ] = self.confidence
                 model_prob[i][0] = 0
                 
-				#print("len",i,part ,batch['target_len'][i%part], -temp-2 )
-                
                 model_prob[i] /= ( batch['target_len'][i%part].float() -temp-2 )
-        
         model_prob.scatter_(1,target.unsqueeze(1),self.confidence)
         model_prob.masked_fill_((target == self.padding_idx).unsqueeze(1),0)
 
