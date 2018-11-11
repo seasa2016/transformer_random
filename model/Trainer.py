@@ -101,7 +101,7 @@ class Trainer(object):
     
         self.model.train()
     
-    def train(self, train_loader, valid_loader, train_steps, valid_steps,relace=False):
+    def train(self, train_loader, valid_loader, train_steps, valid_steps,replace=False):
         """
         The main training loops.
         by iterating over training data (i.e. `train_iter_fct`)
@@ -169,7 +169,7 @@ class Trainer(object):
                                                 (normalization))
 
                         self._gradient_accumulation(
-                            true_batchs,normalization,total_stats,report_stats,relace
+                            true_batchs,normalization,total_stats,report_stats,replace
                         )
 
                         report_stats = self._maybe_report_training(
@@ -186,7 +186,7 @@ class Trainer(object):
                                 logger.info('GpuRank {0}: validate step {1}'.format(
                                     self.gpu_rank,step))
                             #dataloader
-                            valid_stats = self.validate(valid_loader,relace)
+                            valid_stats = self.validate(valid_loader,replace)
                             
                             if(self.gpu_verbose_level > 0):
                                 logger.info('GpuRank {0}: gather valid stat\
