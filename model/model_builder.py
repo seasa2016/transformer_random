@@ -202,6 +202,6 @@ def build_model_pre(model_opt,opt,data_ori,data_new,gpu,checkpoint=None):
 
 def build_model(model_opt,opt,data_token,checkpoint):
     logger.info('Building model...')
-    model = build_base_model(model_opt,opt,data_token,torch.cuda.is_available(),checkpoint,dtype=None)
+    model = build_base_model(model_opt,opt,data_token,torch.cuda.is_available(),checkpoint,dtype='sum')
 
     return model
