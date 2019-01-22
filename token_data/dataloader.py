@@ -59,7 +59,7 @@ class itemDataset(Dataset):
 class ToTensor(object):
     def __call__(self,sample):
         #prlong(sample)
-        np.random.shuffle(sample['target'])
+		#np.random.shuffle(sample['target'])
         qq = sample['target'].copy()
         sample['target'] = np.concatenate([[2],sample['target'],[1]])
         return{
@@ -102,7 +102,7 @@ def collate_fn(data):
 
 if(__name__ == '__main__'):
     print('QQQ')
-    dataset = itemDataset(file_name='playlist_20181024_train.csv',
+    dataset = itemDataset(file_name='playlist_20181023_train.csv',
                                 transform=transforms.Compose([ToTensor()]))
     
     
@@ -110,8 +110,8 @@ if(__name__ == '__main__'):
                         shuffle=False, num_workers=10,collate_fn=collate_fn)
 
     for i,data in enumerate(dataloader):
-        if(i==0):
-            print(data) 
-        break
+        #if(i==0):
+        #    print(data) 
+        #break
         print(i)
             
