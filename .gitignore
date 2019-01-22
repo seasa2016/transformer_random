@@ -10,3 +10,13 @@
 *.target
 subword.*
 *.Mpac
+.ipynb
+compare_*
+pred*
+logger
+precision_*
+total
+check
+final
+first
+*.in
