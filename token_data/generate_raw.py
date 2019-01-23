@@ -11,6 +11,7 @@ import numpy as np
 import json
 import collections
 import itertools
+import string
 
 def read_song_meta(fullpath='for_mike_song_meta.txt'):
   data = open(fullpath, 'r').readlines()
@@ -49,7 +50,7 @@ def intersect(a, b):
   return list(set(a) & set(b))
 
 def load_language_error():
-  le = pd.read_csv('editor_playlist_20180419_language_error.csv', header=None)
+  le = pd.read_csv('./clean_data/editor_playlist_20180419_language_error.csv', header=None)
   le_ids = le.iloc[:,0].tolist()
   le_las = le.iloc[:,1].tolist()
   le = {}
@@ -65,9 +66,9 @@ def merge_tags(ptags, mains, subs):
         ptags.append(main)
   return list(set(ptags))
   
-song_meta = read_song_meta('20180419_mike_song_meta.csv')
+song_meta = read_song_meta('./clean_data/20180419_mike_song_meta.csv')
 
-data = pd.read_csv('editor_playlist_20180419_seg.csv', header=None)
+data = pd.read_csv('./clean_data/editor_playlist_20180419_seg.csv', header=None)
 pid = data.iloc[:,0].tolist()
 # ptitle = data.iloc[:,1].tolist()
 pctitle = data.iloc[:,2].tolist()
@@ -142,7 +143,7 @@ if len(pid) == len(plang):
 #      else:
 #        f.write('%s,%s,%s,"%s"\nhttps://radio-rdc.kkinternal.com/player/%s\n' % (pi, pl, pn, ','.join(pt), ps))
 
-tag_mapping = pd.read_csv('20180419_mike_tags_mapping.csv', header=None)
+tag_mapping = pd.read_csv('./clean_data/20180419_mike_tags_mapping.csv', header=None)
 tag_id = tag_mapping.iloc[:,0].tolist()
 tag_name = tag_mapping.iloc[:,1].tolist()
 tag_type = tag_mapping.iloc[:,2].tolist()
@@ -256,7 +257,14 @@ with open('raw_data.csv', 'w') as f:
             pt_o.append('_UNK')
           if len(pt_a) == 0:
             pt_a.append('_UNK')
-
+          
+          if(isinstance(pct,float)):
+            pct=""
+          if(isinstance(pet,float)):
+            pet=""
+          for _ in string.punctuation+'’':
+            pct = pct.replace(_,'')
+            pet = pet.replace(_,'')
           f.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (pi, pct, ps, pl,','.join(pt_y),','.join(pt_a),','.join(pt_g),','.join(pt_c),','.join(pt_o)))
           f.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (pi, pet, ps, pl,','.join(pt_y),','.join(pt_a),','.join(pt_g),','.join(pt_c),','.join(pt_o)))
             

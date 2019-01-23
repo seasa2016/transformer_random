@@ -5,6 +5,13 @@ for preparing data,  please first run
 python dataprepare.py
 python datatoken.py count playlist_20181023_parse.csv
 python datatoken.py token playlist_20181023_parse.csv
+python change.py subword.source subword.source
 
 for training:
-python 
+python train.py -save_model {path to save} -show
+
+for continue training:
+python train.py -save_model {path to save} -train_from {path to checkpoint} -show
+
+for testing:
+python test.py -src {path to input} -test_from {path to checkpoint} -verbose -show -output {path to output} -data ./token_data/
