@@ -1,12 +1,5 @@
-this file tipically modify from the opennmt-py file
+this is code that implement the transformer for playlist recommendation.
+different from traditional transformer is that at each step, it optimize a set rather a single item.
 
-training part can work now but leave error checking yet
-
-
-
-
-now we need to turn to use the pretrain model
-for pretrain model since the output from decoder should be fix dim,
-thereform we can check if we use 
-1.same dim
-2.use a linear layer to decrease the dim
+for training:
+python 

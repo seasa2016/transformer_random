@@ -7,43 +7,11 @@ def model_opts(parser):
                        help='Word embedding size for src.')
     group.add_argument('-tar_word_vec_size', type=int, default=64,
                        help='Word embedding size for tgt.')
-    group.add_argument('-data', type=str, default='ch_en',
+    group.add_argument('-data', type=str, default='token_data',
                        help='Word embedding size for tgt.')    
-
-    group.add_argument('-share_decoder_embeddings', action='store_true',
-                       help="""Use a shared weight matrix for the input and
-                       output word  embeddings in the decoder.""")
-    group.add_argument('-share_embeddings', action='store_true',
-                       help="""Share the word embeddings between encoder
-                       and decoder. Need to use shared dictionary for this
-                       option.""")
-    group.add_argument('-position_encoding', action='store_true',
-                       help="""Use a sin to mark relative words positions.
-                       Necessary for non-RNN style models.
-                       """)
-
-    group = parser.add_argument_group('model_embedding_features')
-    group.add_argument('-feat_merge', type=str, default='sum',
-                       choices=['concat', 'sum', 'mlp'],
-                       help="""Merge action for incorporating features embeddings.
-                       Options [concat|sum|mlp].""")
-    group.add_argument('-feat_vec_size', type=int, default=32,
-                       help="""If specified, feature embedding sizes
-                       will be set to this. Otherwise, feat_vec_exponent
-                       will be used.""")
 
     # Encoder-Deocder Options
     group = parser.add_argument_group('Model- Encoder-Decoder')
-    group.add_argument('-encoder_type', type=str, default='transformer',
-                       choices=['rnn', 'brnn', 'mean', 'transformer', 'cnn'],
-                       help="""Type of encoder layer to use. Non-RNN layers
-                       are experimental. Options are
-                       [rnn|brnn|mean|transformer|cnn].""")
-    group.add_argument('-decoder_type', type=str, default='transformer',
-                       choices=['rnn', 'transformer', 'cnn'],
-                       help="""Type of decoder layer to use. Non-RNN layers
-                       are experimental. Options are
-                       [rnn|transformer|cnn].""")
     group.add_argument('-replace', action='store_true',
                        help="""whether to pass a layer to reduce the dim""")
 
@@ -66,10 +34,6 @@ def model_opts(parser):
 
     # Attention options
     group = parser.add_argument_group('Model- Attention')
-    group.add_argument('-global_attention', type=str, default='general',
-                       choices=['dot', 'general', 'mlp'],
-                       help="""The attention type to use:
-                       dotprod or general (Luong) or MLP (Bahdanau)""")
     group.add_argument('-self_attn_type', type=str, default="scaled_dot",
                        help="""Self attention type in Transformer decoder
                        layer -- currently "scaled_dot" or "average" """)
@@ -84,40 +48,8 @@ def pre_model_opts(parser):
     group.add_argument('-tar_word_vec_size', type=int, default=256,
                        help='Word embedding size for tgt.')
 
-    group.add_argument('-share_decoder_embeddings', action='store_true',
-                       help="""Use a shared weight matrix for the input and
-                       output word  embeddings in the decoder.""")
-    group.add_argument('-share_embeddings', action='store_true',
-                       help="""Share the word embeddings between encoder
-                       and decoder. Need to use shared dictionary for this
-                       option.""")
-    group.add_argument('-position_encoding', action='store_true',
-                       help="""Use a sin to mark relative words positions.
-                       Necessary for non-RNN style models.
-                       """)
-
-    group = parser.add_argument_group('model_embedding_features')
-    group.add_argument('-feat_merge', type=str, default='sum',
-                       choices=['concat', 'sum', 'mlp'],
-                       help="""Merge action for incorporating features embeddings.
-                       Options [concat|sum|mlp].""")
-    group.add_argument('-feat_vec_size', type=int, default=256,
-                       help="""If specified, feature embedding sizes
-                       will be set to this. Otherwise, feat_vec_exponent
-                       will be used.""")
-
     # Encoder-Deocder Options
     group = parser.add_argument_group('Model- Encoder-Decoder')
-    group.add_argument('-encoder_type', type=str, default='transformer',
-                       choices=['rnn', 'brnn', 'mean', 'transformer', 'cnn'],
-                       help="""Type of encoder layer to use. Non-RNN layers
-                       are experimental. Options are
-                       [rnn|brnn|mean|transformer|cnn].""")
-    group.add_argument('-decoder_type', type=str, default='transformer',
-                       choices=['rnn', 'transformer', 'cnn'],
-                       help="""Type of decoder layer to use. Non-RNN layers
-                       are experimental. Options are
-                       [rnn|transformer|cnn].""")
     group.add_argument('-replace', action='store_true',
                        help="""whether to pass a layer to reduce the dim""")
 
@@ -140,10 +72,6 @@ def pre_model_opts(parser):
 
     # Attention options
     group = parser.add_argument_group('Model- Attention')
-    group.add_argument('-global_attention', type=str, default='general',
-                       choices=['dot', 'general', 'mlp'],
-                       help="""The attention type to use:
-                       dotprod or general (Luong) or MLP (Bahdanau)""")
     group.add_argument('-self_attn_type', type=str, default="scaled_dot",
                        help="""Self attention type in Transformer decoder
                        layer -- currently "scaled_dot" or "average" """)
@@ -197,23 +125,6 @@ def train_opts(parser):
     group.add_argument('-train_from', default=None, type=str,
                        help="""If training from a checkpoint then this is the
                        path to the pretrained model's state_dict.""")
-
-    # Pretrained word vectors
-    group.add_argument('-pre_word_vecs_enc',
-                       help="""If a valid path is specified, then this will load
-                       pretrained word embeddings on the encoder side.
-                       See README for specific formatting instructions.""")
-    group.add_argument('-pre_word_vecs_dec',
-                       help="""If a valid path is specified, then this will load
-                       pretrained word embeddings on the decoder side.
-                       See README for specific formatting instructions.""")
-    # Fixed word vectors
-    group.add_argument('-fix_word_vecs_enc',
-                       action='store_true',
-                       help="Fix word embeddings on the encoder side.")
-    group.add_argument('-fix_word_vecs_dec',
-                       action='store_true',
-                       help="Fix word embeddings on the encoder side.")
 
     # Optimization options
     group = parser.add_argument_group('Optimization- Type')
