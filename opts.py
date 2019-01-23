@@ -10,6 +10,9 @@ def model_opts(parser):
     group.add_argument('-data', type=str, default='token_data',
                        help='Word embedding size for tgt.')    
 
+    group.add_argument('-decode_pos', type=bool, action='store_true',
+                       help='Word embedding size for tgt.')    
+
     # Encoder-Deocder Options
     group = parser.add_argument_group('Model- Encoder-Decoder')
     group.add_argument('-replace', action='store_true',
