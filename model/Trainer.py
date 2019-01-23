@@ -186,7 +186,8 @@ class Trainer(object):
                                 logger.info('GpuRank {0}: validate step {1}'.format(
                                     self.gpu_rank,step))
                             #dataloader
-                            valid_stats = self.validate(valid_loader,replace)
+                            with torch.no_grad():
+                                valid_stats = self.validate(valid_loader,replace)
                             
                             if(self.gpu_verbose_level > 0):
                                 logger.info('GpuRank {0}: gather valid stat\
@@ -223,13 +224,15 @@ class Trainer(object):
         for i,batch in enumerate(valid_loader):
             if(torch.cuda.is_available()):
                 batch = to_cuda(batch)
-
+            
+            #for normalize loss
+            target_size = batch['target_len'].sum().item()
             output, attn, _ = self.model(
                 batch['source'],batch['target'],batch['source_len'],replace=replace
                 )
             
             batch_stat = self.valid_loss.monolithic_compute_loss(
-                batch,output,attn)
+                batch,output,attn,target_size)
             
             stats.update(batch_stat)
             
@@ -262,6 +265,7 @@ class Trainer(object):
             report_stats.n_src_words += batch['source_len'].sum().item()
             
             for j in range(0,target_size-1,trunc_size):
+                #truncate to use memory more efficiently
                 target = batch['target'][j:j+trunc_size+1]
                 
                 if(self.grad_accum_count == 1):
@@ -269,7 +273,7 @@ class Trainer(object):
                 output, attn, dec_state = self.model(
                     batch['source'],target,batch['source_len'],dec_state,replace
                 )
-
+                #update score
                 batch_stat = self.train_loss.sharded_compute_loss(
                     batch, output, attn, j,
                     trunc_size+1, self.shard_size , normalization)
@@ -299,7 +303,7 @@ class Trainer(object):
     
     def _start_report_manager(self, start_time = None):
         """
-        simple function to start report manager(if any)
+            simple function to start report manager(if any)
         """
         if(self.report_manager is not None):
             if(start_time is None):
@@ -309,14 +313,14 @@ class Trainer(object):
 
     def _maybe_gather_stats(self,stat):
         """
-        Gather statistics in multi-processes cases
+            Gather statistics in multi-processes cases
 
-        Args:
-            stat(:obj:onmt.utils.Statistics): a Statistics object to gather
-                or None (it returns None in this case)
+            Args:
+                stat(:obj:onmt.utils.Statistics): a Statistics object to gather
+                    or None (it returns None in this case)
 
-        Returns:
-            stat: the updated (or unchanged) stat object
+            Returns:
+                stat: the updated (or unchanged) stat object
         """
         if(stat is not None and self.n_gpu>1):
             return statistics.all_gather_list(stat)

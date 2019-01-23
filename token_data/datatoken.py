@@ -134,28 +134,9 @@ def tokenlize(file_name):
                     print_token(f_out,data[tt],tt)
                 f_out.write('\n')
 
-def test(file_name):
-    """
-    prepare the data for testing
-    """
-    ttype = ["title","target","language","year","acoustic","genre","context","o"]
-    token = dict()
-
-    random.seed(5)
-
-
-    for t in ttype:
-        token[t] = dict()
-        with open('token_{0}.label'.format(t)) as f_in:
-            for i,word in enumerate(f_in):
-                token[t][word.strip()] = str(i)
-    
-
 if(__name__ == '__main__'):
     if(sys.argv[1] == 'count'):
         count_up(sys.argv[2])
     elif(sys.argv[1] == 'token'):
         tokenlize(sys.argv[2])
-    elif(sys.argv[1] == 'test'):
-        test(sys.argv[2])
 
