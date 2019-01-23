@@ -25,11 +25,11 @@ def sen_pre_processing(sen):
 
 
 tag = dict()
-with open('./20180419_mike_tags_mapping.csv') as f:
+with open('./clean_data/20180419_mike_tags_mapping.csv') as f:
     for line in f:
         line = line.strip().split(',')
         tag[int(line[0])] = line[2]
-raw_data = pd.read_csv('./editor_playlist_20180419_mike.csv', header=None)
+raw_data = pd.read_csv('./clean_data/editor_playlist_20180419_mike.csv', header=None)
 
 data = dict()
 
@@ -84,10 +84,10 @@ for i in range(raw_data.shape[0]):
                 data[p_id]['genre'].append(t)
             elif(tag[t] == 'O'):
                 data[p_id]['o'].append(t)
-        if i % 100 == 0:
+        if i % 1000 == 0:
             print('{0}'.format(i))
 
-with open('playlist_20181023_parse_1.csv','w') as f:
+with open('playlist_20181023_parse.csv','w') as f:
     f.write('"id","source","target","language","year","acoustic","genre","context","o"\n')
     for i in data:
         """

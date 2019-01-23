@@ -59,7 +59,7 @@ class itemDataset(Dataset):
 class ToTensor(object):
     def __call__(self,sample):
         #prlong(sample)
-		#np.random.shuffle(sample['target'])
+        np.random.shuffle(sample['target'])
         qq = sample['target'].copy()
         sample['target'] = np.concatenate([[2],sample['target'],[1]])
         return{
