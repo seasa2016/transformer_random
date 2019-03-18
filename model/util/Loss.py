@@ -88,7 +88,7 @@ class LossComputeBase(nn.Module):
         """
         return NotImplementedError
 
-    def monolithic_compute_loss(self,batch,output,attns):
+    def monolithic_compute_loss(self,batch,output,attns,target_size):
         """
         Compute the forward loss for the batch.
 
@@ -105,7 +105,7 @@ class LossComputeBase(nn.Module):
         range_ = (0,batch['target'].shape[0])
         shard_state = self._make_shard_state(batch['target'],output,range_,attns)
         
-        loss = self._compute_loss(**shard_state,shard_size=batch['target'].shape[0],batch=batch)
+        loss = self._compute_loss(**shard_state,shard_size=batch['target'].shape[0],batch=batch).div(float(target_size))
         num_non_padding,num_correct = self._compute_corr(output,batch['origin'])
 
         batch_stats = statistics.Statistics(loss.item(),num_non_padding,num_correct)
@@ -116,15 +116,6 @@ class LossComputeBase(nn.Module):
         """
         Compute the forward loss and backpropagate.  Computation is done
         with shards and optionally truncation for memory efficiency.
-
-        Also supports truncated BPTT for long sequences by taking a
-        range in the decoder output sequence to back propagate in.
-        Range is from `(cur_trunc, cur_trunc + trunc_size)`.
-
-        Note sharding is an exact efficiency trick to relieve memory
-        required for the generation buffers. Truncation is an
-        approximate efficiency trick to relieve the memory required
-        in the RNN buffers.
 
         Args:
           batch (batch) : batch of labeled examples
@@ -164,8 +155,7 @@ class LossComputeBase(nn.Module):
     def _compute_corr(self, output, target):
         """
         Args:
-            loss (:obj:`FloatTensor`): the loss computed by the loss criterion.
-            scores (:obj:`FloatTensor`): a score for each possible output
+            output (:obj:`FloatTensor`): inference output.
             target (:obj:`FloatTensor`): true targets
 
         Returns:
@@ -180,8 +170,8 @@ class LossComputeBase(nn.Module):
         #here we use set rathe than compare correct at same place
         #iterate over the betch size
         for i in range(output.shape[1]):
-            origin = set( np.array(target[i]))
-            ans = set( np.array( pred[:,i]))
+            origin = set( np.array(target[i].detach().cpu()))
+            ans = set( np.array( pred[:,i].detach().cpu()))
 			
             num_correct += len(origin & ans)
         num_non_padding = non_padding.sum().item()
@@ -210,7 +200,6 @@ class LabelSmoothingLoss(nn.Module):
         #however here we meet that the padding problem. therefore 2
         smoothing_value = label_smoothing / (tgt_dict_size - 2)
         one_hot = torch.full((tgt_dict_size,),smoothing_value)
-        one_hot = torch.full((tgt_dict_size,),0)
         
         one_hot[self.padding_idx] = 0
         self.register_buffer('one_hot',one_hot.unsqueeze(0))
@@ -222,9 +211,9 @@ class LabelSmoothingLoss(nn.Module):
         output (FloatTensor): batch_size x n_classes
         target (LongTensor): batch_size
         """
+        #compute the target
         model_prob = self.one_hot.repeat(target.shape[0],1)
-		#print("origin",batch['origin'].shape)
-		#print("target",batch['target'].shape)
+		
         for i in range(model_prob.shape[0]):
             temp = now*shard_size+i//part
             
@@ -234,6 +223,7 @@ class LabelSmoothingLoss(nn.Module):
                 model_prob[i][ batch['origin'][i%part][temp:] ] = self.confidence
                 model_prob[i][0] = 0
                 
+                #normalize according to the positive number
                 model_prob[i] /= ( batch['target_len'][i%part].float() -temp-2 )
         model_prob.scatter_(1,target.unsqueeze(1),self.confidence)
         model_prob.masked_fill_((target == self.padding_idx).unsqueeze(1),0)
@@ -273,12 +263,8 @@ class NMTLossCompute(LossComputeBase):
         bottled_output = self._bottle(output)
         truth = target.view(-1)
         
-		#if(origin is None):
-		#loss = self.criterion(bottled_output,truth)
-		#else:
         loss = self.criterion(bottled_output,truth,shard_size,batch,part,now)
-		#stats = self._stats(loss.clone(),bottled_output,truth)
-
+        
         return loss
     
 

@@ -64,8 +64,6 @@ class MultiHeadedAttention(nn.Module):
                     layer_cache['self_key'] = key
                     layer_cache['self_value'] = value
            		
-				#print("self_key",layer_cache['self_key'].shape)
-				#print("self_value",layer_cache['self_value'].shape)
 				
             elif(attn_type == 'context'):                
                 query = self.linear_query(query)
@@ -82,8 +80,6 @@ class MultiHeadedAttention(nn.Module):
                     
                     layer_cache['memory_key'] = key
                     layer_cache['memory_value'] = value
-					#print("memory_key",layer_cache['memory_key'].shape)
-					#print("memory_value",layer_cache['memory_value'].shape)
                 
                 else:
                     key,value = self.linear_key(key),self.linear_value(value)

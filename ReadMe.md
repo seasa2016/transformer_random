@@ -1,12 +1,17 @@
-this file tipically modify from the opennmt-py file
+this is code that implement the transformer for playlist recommendation.
+different from traditional transformer is that at each step, it optimize a set rather a single item.
 
-training part can work now but leave error checking yet
+for preparing data,  please first run 
+python generative_raw.py
+python datatoken.py count raw.csv
+python datatoken.py token raw.csv
+python change.py subword.source subword.source
 
+for training:
+python train.py -save_model {path to save} -show
 
+for continue training:
+python train.py -save_model {path to save} -train_from {path to checkpoint} -show
 
-
-now we need to turn to use the pretrain model
-for pretrain model since the output from decoder should be fix dim,
-thereform we can check if we use 
-1.same dim
-2.use a linear layer to decrease the dim
+for testing:
+python test.py -src {path to input} -test_from {path to checkpoint} -verbose -show -output {path to output} -data ./token_data/

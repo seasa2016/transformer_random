@@ -578,11 +578,11 @@ class Translator(object):
 			dec_out = dec_out.squeeze(0)
 
 			#we dont use copy attention here
-			if(not self.copy_attn):
-				out = F.log_softmax(dec_out,dim=-1).data
+			#if(not self.copy_attn):
+				#out = F.log_softmax(dec_out,dim=-1).data
 
-				out = unbottle(out)
-				beam_attn = unbottle(attn["std"])
+			out = unbottle(out)
+			beam_attn = unbottle(attn["std"])
 
 			for j,b in enumerate(beam):
 				b.advance(out[:,j],
