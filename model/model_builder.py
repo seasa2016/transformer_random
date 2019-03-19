@@ -41,13 +41,13 @@ def build_encoder(opt,src_dict,tag_dict):
                                 opt.model_dim,opt.nin_dim_en,
                                 opt.dropout,src_embedding)
 
-def build_decoder(opt,tar_dict,dtype='sum'):
+def build_decoder(opt,tar_dict):
     """
     function to build the decoder
     """
 
     max_len = 128
-    tar_embedding = build_embedding(opt,tar_dict,max_len,for_encoder=False,dtype=dtype)
+    tar_embedding = build_embedding(opt,tar_dict,max_len,for_encoder=False,dtype=opt.decode_pos)
     return transformer.Decoder(
         opt.dec_layer,opt.num_head,
         opt.model_dim,opt.nin_dim_de,len(tar_dict),max_len,
@@ -76,7 +76,7 @@ def load_test_model(opt,model_path=None,mode=False):
                     data_new[t][word.strip()+'_'] = i
 	
     if(mode == False):
-        model = build_base_model(checkpoint['opt'],opt, data_new, torch.cuda.is_available(),checkpoint,dtype='sum')
+        model = build_base_model(checkpoint['opt'],opt, data_new, torch.cuda.is_available(),checkpoint)
     else:
 		#build_model_pre(opt,opt,data_ori,data_new,True,checkpoint=checkpoint)
         model = build_base_model(opt,opt,data_new,True,checkpoint=checkpoint)
@@ -91,11 +91,11 @@ def build_base_model(model_opt,opt,data_token,gpu,checkpoint=None,dtype=None):
     
     #build encoder
     if('tag' in data_token):
-        encoder = build_encoder(model_opt,data_token['source'],len(data_token['tag']) if data_token['tag'] else None)
+        encoder = build_encoder(model_opt,data_token['source'],len(data_token['tag']))
     else:
         encoder = build_encoder(model_opt,data_token['source'],None)
     logger.info("finish build encoder")
-    decoder = build_decoder(model_opt,data_token['target'],dtype=dtype)
+    decoder = build_decoder(model_opt,data_token['target'])
     logger.info("finish build decoder")
 
     device = torch.device("cuda" if gpu else "cpu")
@@ -114,12 +114,12 @@ def build_base_model(model_opt,opt,data_token,gpu,checkpoint=None,dtype=None):
         logger.info('loading model weight from checkpoint')
         model.load_state_dict(checkpoint['model'])
     else:
-        if model_opt.param_init != 0.0:
+        if(model_opt.param_init != 0.0):
             for p in model.parameters():
                 if(p.requires_grad):
                     p.data.uniform_(-model_opt.param_init, model_opt.param_init)
             
-        if model_opt.param_init_glorot:
+        if(model_opt.param_init_glorot):
             for p in model.parameters():
                 if(p.requires_grad):
                     if p.dim() > 1:
@@ -133,7 +133,7 @@ def change(model_opt,opt,model,data_new):
     """
     change the decoder and lock the grad for the encoder
     """
-    model.decoder = build_decoder(opt,data_new['target'],dtype='none')
+    model.decoder = build_decoder(opt,data_new['target'])
 
     #update the parameter
     model_opt.tar_word_vec_size = opt.tar_word_vec_size
@@ -202,6 +202,6 @@ def build_model_pre(model_opt,opt,data_ori,data_new,gpu,checkpoint=None):
 
 def build_model(model_opt,opt,data_token,checkpoint):
     logger.info('Building model...')
-    model = build_base_model(model_opt,opt,data_token,torch.cuda.is_available(),checkpoint,dtype=None)
+    model = build_base_model(model_opt,opt,data_token,torch.cuda.is_available(),checkpoint)
 
     return model

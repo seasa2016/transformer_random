@@ -28,8 +28,10 @@ class Embedding(nn.Module):
             self.pos_emb = nn.Embedding(max_len,feature_dim)
             self.pos_emb.weight = nn.Parameter(self.pos_init(self.pos_emb.weight.shape))
             self.pos_emb.weight.requires_grad = False
-        else:
+        elif(self.dtype==None):
             self.pos_emb = None
+        else:
+            raise TypeError('no this method')
 
         if(self.tag):
             self.tag_emb = nn.Embedding(self.tag,emb_dim)

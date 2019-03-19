@@ -180,7 +180,7 @@ ptag_hist = collections.Counter()
 
 with open('raw_data.csv', 'w') as f:
   with open('no_tags.csv', 'w') as fn:
-    f.write('"id","title","song","lang","genre","context"\n')
+    f.write('"id","source","song","lang","genre","context"\n')
     for pi, pti, ps, pt, pl in zip(pid, ptitle, psongs, ptags, plang):
       if pi in le_mapping:
           pl = le_mapping[str(pi)]
